@@ -1,9 +1,9 @@
 package rest
 
 type APIResponse[T any] struct {
-	StatusCode int
-	Message    string
-	Data       T
+	StatusCode int    `json:"status"`
+	Message    string `json:"message"`
+	Data       T      `json:"data"`
 }
 type APIResponseLogin struct {
 	StatusCode  int

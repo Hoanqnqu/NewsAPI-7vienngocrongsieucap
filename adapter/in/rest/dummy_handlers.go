@@ -21,8 +21,8 @@ func NewDummyHandler(dummyUseCase inport.Dummy) *DummyHandler {
 
 func (d *DummyHandler) Dummy(response http.ResponseWriter, request *http.Request) {
 	//dummyOutput := d.dummyUseCase.Get()
+	response.WriteHeader(404)
 	response.Header().Set("Content-Type", "application/json")
-	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(APIResponse[any]{
 		StatusCode: 404,
 		Message:    "Not Found",
