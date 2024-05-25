@@ -12,6 +12,7 @@ var jwtKey = []byte("my_secret_key")
 var tokens []string
 
 type Claims struct {
+	ID       string `json:"ID"`
 	AuthID   string `json:"auth_id"`
 	Email    string `json:"email"`
 	Name     string `json:"name"`
@@ -20,17 +21,34 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(user *inport.CreateUserPayload) (string, error) {
+func GenerateJWT(user interface{}) (string, error) {
 	expirationTime := time.Now().Add(20000 * time.Minute)
-	claims := &Claims{
-		AuthID:   user.AuthID,
-		Email:    user.Email,
-		Name:     user.Name,
-		Role:     user.Role,
-		ImageUrl: user.ImageUrl,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
+	var claims *Claims
+	switch user := user.(type) {
+	case *inport.CreateUserPayload:
+		claims = &Claims{
+			AuthID:   user.AuthID,
+			Email:    user.Email,
+			Name:     user.Name,
+			Role:     user.Role,
+			ImageUrl: user.ImageUrl,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(expirationTime),
+			},
+		}
+	case *inport.UpdateUserPayload:
+		claims = &Claims{
+			ID:       user.ID.String(),
+			AuthID:   user.AuthID,
+			Email:    user.Email,
+			Name:     user.Name,
+			Role:     user.Role,
+			ImageUrl: user.ImageUrl,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(expirationTime),
+			},
+		}
+
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

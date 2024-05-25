@@ -2,6 +2,7 @@ package outAdapter
 
 import (
 	"context"
+	"github.com/google/uuid"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
@@ -87,4 +88,60 @@ func (u *UserAdapter) GetByAuthID(authID string) (outUser outport.User, err erro
 		ImageUrl:  dbUser.ImageUrl.String,
 	}
 	return outUser, nil
+}
+
+func (u *UserAdapter) Like(like outport.Like) error {
+	query := db.New(u.pool)
+	return query.InsertLike(context.Background(), db.InsertLikeParams{
+		NewsID: pgtype.UUID{
+			Bytes: uuid.MustParse(like.NewsID),
+			Valid: true,
+		},
+		UserID: pgtype.UUID{
+			Bytes: uuid.MustParse(like.UserID),
+			Valid: true,
+		},
+	})
+}
+
+func (u *UserAdapter) Unlike(like outport.Like) error {
+	query := db.New(u.pool)
+	return query.DeleteLike(context.Background(), db.DeleteLikeParams{
+		NewsID: pgtype.UUID{
+			Bytes: uuid.MustParse(like.NewsID),
+			Valid: true,
+		},
+		UserID: pgtype.UUID{
+			Bytes: uuid.MustParse(like.UserID),
+			Valid: true,
+		},
+	})
+}
+
+func (u *UserAdapter) DisLike(like outport.Like) error {
+	query := db.New(u.pool)
+	return query.InsertDisLike(context.Background(), db.InsertDisLikeParams{
+		NewsID: pgtype.UUID{
+			Bytes: uuid.MustParse(like.NewsID),
+			Valid: true,
+		},
+		UserID: pgtype.UUID{
+			Bytes: uuid.MustParse(like.UserID),
+			Valid: true,
+		},
+	})
+}
+
+func (u *UserAdapter) UnDisLike(like outport.Like) error {
+	query := db.New(u.pool)
+	return query.DeleteDisLike(context.Background(), db.DeleteDisLikeParams{
+		NewsID: pgtype.UUID{
+			Bytes: uuid.MustParse(like.NewsID),
+			Valid: true,
+		},
+		UserID: pgtype.UUID{
+			Bytes: uuid.MustParse(like.UserID),
+			Valid: true,
+		},
+	})
 }

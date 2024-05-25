@@ -35,9 +35,17 @@ type UpdateUserPayload struct {
 	ImageUrl string
 }
 
+type Like struct {
+	UserId string
+	NewsId string
+}
 type UsersUseCase interface {
 	GetAll() ([]*User, error)
 	Insert(user *CreateUserPayload) error
 	Update(user *UpdateUserPayload) error
-	GetUserByAuthID(authID string) (user *CreateUserPayload, err error)
+	GetUserByAuthID(authID string) (user *UpdateUserPayload, err error)
+	Like(like *Like) error
+	Unlike(like *Like) error
+	DisLike(like *Like) error
+	UnDisLike(like *Like) error
 }

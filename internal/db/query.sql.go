@@ -12,7 +12,9 @@ import (
 )
 
 const deleteCategory = `-- name: DeleteCategory :exec
-UPDATE categories SET deleted_at = NOW() WHERE id = $1
+UPDATE categories
+SET deleted_at = NOW()
+WHERE id = $1
 `
 
 func (q *Queries) DeleteCategory(ctx context.Context, id pgtype.UUID) error {
@@ -20,8 +22,44 @@ func (q *Queries) DeleteCategory(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const deleteDisLike = `-- name: DeleteDisLike :exec
+DELETE
+from likes
+Where news_id = $1
+  and user_id = $2
+`
+
+type DeleteDisLikeParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteDisLike(ctx context.Context, arg DeleteDisLikeParams) error {
+	_, err := q.db.Exec(ctx, deleteDisLike, arg.NewsID, arg.UserID)
+	return err
+}
+
+const deleteLike = `-- name: DeleteLike :exec
+DELETE
+from likes
+Where news_id = $1
+  and user_id = $2
+`
+
+type DeleteLikeParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteLike(ctx context.Context, arg DeleteLikeParams) error {
+	_, err := q.db.Exec(ctx, deleteLike, arg.NewsID, arg.UserID)
+	return err
+}
+
 const deleteNews = `-- name: DeleteNews :exec
-UPDATE news SET deleted_at = NOW() WHERE id = $1
+UPDATE news
+SET deleted_at = NOW()
+WHERE id = $1
 `
 
 func (q *Queries) DeleteNews(ctx context.Context, id pgtype.UUID) error {
@@ -30,7 +68,9 @@ func (q *Queries) DeleteNews(ctx context.Context, id pgtype.UUID) error {
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-UPDATE users SET deleted_at = NOW() WHERE id = $1
+UPDATE users
+SET deleted_at = NOW()
+WHERE id = $1
 `
 
 func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
@@ -39,7 +79,8 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 }
 
 const getAllCategories = `-- name: GetAllCategories :many
-SELECT id, name, created_at, updated_at, deleted_at from categories
+SELECT id, name, created_at, updated_at, deleted_at
+from categories
 `
 
 func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
@@ -69,7 +110,8 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
 }
 
 const getAllNews = `-- name: GetAllNews :many
-SELECT id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at from news
+SELECT id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at
+from news
 `
 
 func (q *Queries) GetAllNews(ctx context.Context) ([]News, error) {
@@ -105,7 +147,8 @@ func (q *Queries) GetAllNews(ctx context.Context) ([]News, error) {
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, auth_id, email, name, role, image_url, created_at, updated_at, deleted_at from users
+SELECT id, auth_id, email, name, role, image_url, created_at, updated_at, deleted_at
+from users
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -139,7 +182,9 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 }
 
 const getUserByAuthID = `-- name: GetUserByAuthID :one
-SELECT id, auth_id, email, name, role, image_url, created_at, updated_at, deleted_at FROM users WHERE users.auth_id = $1 LIMIT 1
+SELECT id, auth_id, email, name, role, image_url, created_at, updated_at, deleted_at
+FROM users
+WHERE users.auth_id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByAuthID(ctx context.Context, authID string) (User, error) {
@@ -160,8 +205,7 @@ func (q *Queries) GetUserByAuthID(ctx context.Context, authID string) (User, err
 }
 
 const insertCategory = `-- name: InsertCategory :exec
-INSERT INTO
-    categories (id, name, created_at)
+INSERT INTO categories (id, name, created_at)
 VALUES ($1, $2, NOW())
 `
 
@@ -175,21 +219,51 @@ func (q *Queries) InsertCategory(ctx context.Context, arg InsertCategoryParams) 
 	return err
 }
 
+const insertDisLike = `-- name: InsertDisLike :exec
+INSERT INTO likes(news_id,
+                  user_id)
+VALUES ($1,
+        $2)
+`
+
+type InsertDisLikeParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) InsertDisLike(ctx context.Context, arg InsertDisLikeParams) error {
+	_, err := q.db.Exec(ctx, insertDisLike, arg.NewsID, arg.UserID)
+	return err
+}
+
+const insertLike = `-- name: InsertLike :exec
+INSERT INTO likes(news_id,
+                  user_id)
+VALUES ($1,
+        $2)
+`
+
+type InsertLikeParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) InsertLike(ctx context.Context, arg InsertLikeParams) error {
+	_, err := q.db.Exec(ctx, insertLike, arg.NewsID, arg.UserID)
+	return err
+}
+
 const insertNews = `-- name: InsertNews :exec
-INSERT INTO
-    news (
-        id,
-        author,
-        title,
-        description,
-        content,
-        url,
-        image_url,
-        publish_at,
-        created_at
-    )
-VALUES (
-        $1,
+INSERT INTO news (id,
+                  author,
+                  title,
+                  description,
+                  content,
+                  url,
+                  image_url,
+                  publish_at,
+                  created_at)
+VALUES ($1,
         $2,
         $3,
         $4,
@@ -197,8 +271,7 @@ VALUES (
         $6,
         $7,
         $8,
-        NOW()
-    )
+        NOW())
 `
 
 type InsertNewsParams struct {
@@ -227,16 +300,13 @@ func (q *Queries) InsertNews(ctx context.Context, arg InsertNewsParams) error {
 }
 
 const insertUser = `-- name: InsertUser :exec
-INSERT INTO
-    users (
-        id,
-        auth_id,
-        email,
-        name,
-        role,
-        image_url,
-        created_at
-    )
+INSERT INTO users (id,
+                   auth_id,
+                   email,
+                   name,
+                   role,
+                   image_url,
+                   created_at)
 VALUES ($1, $2, $3, $4, $5, $6, NOW())
 `
 
@@ -263,11 +333,9 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 
 const updateCategory = `-- name: UpdateCategory :exec
 UPDATE categories
-SET
-    name = $1,
+SET name       = $1,
     updated_at = NOW()
-WHERE
-    id = $2
+WHERE id = $2
 `
 
 type UpdateCategoryParams struct {
@@ -282,17 +350,15 @@ func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) 
 
 const updateNews = `-- name: UpdateNews :exec
 UPDATE news
-SET
-    title = $1,
+SET title       = $1,
     description = $2,
-    content = $3,
-    author = $4,
-    url = $5,
-    image_url = $6,
-    publish_at = $7,
-    updated_at = NOW()
-WHERE
-    id = $8
+    content     = $3,
+    author      = $4,
+    url         = $5,
+    image_url   = $6,
+    publish_at  = $7,
+    updated_at  = NOW()
+WHERE id = $8
 `
 
 type UpdateNewsParams struct {
@@ -322,12 +388,10 @@ func (q *Queries) UpdateNews(ctx context.Context, arg UpdateNewsParams) error {
 
 const updateUser = `-- name: UpdateUser :exec
 UPDATE users
-SET
-    name = $1,
-    image_url = $2,
+SET name       = $1,
+    image_url  = $2,
     updated_at = NOW()
-WHERE
-    id = $3
+WHERE id = $3
 `
 
 type UpdateUserParams struct {

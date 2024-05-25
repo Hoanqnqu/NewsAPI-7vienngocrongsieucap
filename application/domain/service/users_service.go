@@ -50,16 +50,45 @@ func (g *UsersService) Update(user *inport.UpdateUserPayload) error {
 		ImageUrl: user.ImageUrl,
 	})
 }
-func (g *UsersService) GetUserByAuthID(authID string) (user *inport.CreateUserPayload, err error) {
+func (g *UsersService) GetUserByAuthID(authID string) (user *inport.UpdateUserPayload, err error) {
 	u, err := g.usersPort.GetByAuthID(authID)
 	if err != nil {
 		return nil, err
 	}
-	return &inport.CreateUserPayload{
+	return &inport.UpdateUserPayload{
+		ID:       u.ID,
 		AuthID:   u.AuthID,
 		Email:    u.Email,
 		Name:     u.Name,
 		Role:     u.Role,
 		ImageUrl: u.ImageUrl,
 	}, nil
+}
+
+func (g *UsersService) Like(like *inport.Like) error {
+	return g.usersPort.Like(outport.Like{
+		UserID: like.UserId,
+		NewsID: like.NewsId,
+	})
+}
+
+func (g *UsersService) Unlike(like *inport.Like) error {
+	return g.usersPort.Unlike(outport.Like{
+		UserID: like.UserId,
+		NewsID: like.NewsId,
+	})
+}
+
+func (g *UsersService) DisLike(like *inport.Like) error {
+	return g.usersPort.DisLike(outport.Like{
+		UserID: like.UserId,
+		NewsID: like.NewsId,
+	})
+}
+
+func (g *UsersService) UnDisLike(like *inport.Like) error {
+	return g.usersPort.UnDisLike(outport.Like{
+		UserID: like.UserId,
+		NewsID: like.NewsId,
+	})
 }

@@ -3,11 +3,17 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
 	"log"
 	"net/http"
 	"news-api/adapter/in/auth"
 	inport "news-api/application/port/in"
 )
+
+type User struct {
+	ID   string
+	Role string
+}
 
 func Logger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -62,7 +68,7 @@ func AdminMiddleware(next http.Handler) http.Handler {
 func UserMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		tokenString := request.Header.Get("Authorization")
-		log.Println(tokenString)
+		tokenString = tokenString[len("Bearer "):]
 		if tokenString == "" {
 			writer.WriteHeader(401)
 			json.NewEncoder(writer).Encode(APIResponse[any]{
@@ -89,7 +95,8 @@ func UserMiddleware(next http.Handler) http.Handler {
 			})
 			return
 		}
-		ctx := context.WithValue(request.Context(), "user", inport.CreateUserPayload{
+		ctx := context.WithValue(request.Context(), "user", inport.UpdateUserPayload{
+			ID:       uuid.MustParse(claim["ID"].(string)),
 			AuthID:   claim["auth_id"].(string),
 			Role:     claim["role"].(string),
 			Email:    claim["email"].(string),
