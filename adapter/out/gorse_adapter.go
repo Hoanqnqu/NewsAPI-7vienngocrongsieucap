@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/zhenghaoz/gorse/client"
+	"time"
 )
 
 type GorseAdapter struct {
@@ -32,6 +33,7 @@ func (g *GorseAdapter) InsertNews(ctx context.Context, id uuid.UUID, categories 
 			}
 			return result
 		}(),
+		Timestamp: time.Now().String(),
 	})
 	return err
 }
