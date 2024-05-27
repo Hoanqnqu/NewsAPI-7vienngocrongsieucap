@@ -2,6 +2,7 @@ CREATE TABLE users (
     id uuid primary key,
     auth_id text not null,
     email varchar,
+    password VARCHAR,
     name varchar,
     role varchar,
     image_url text,

@@ -21,34 +21,19 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(user interface{}) (string, error) {
+func GenerateJWT(user *inport.UpdateUserPayload) (string, error) {
 	expirationTime := time.Now().Add(20000 * time.Minute)
-	var claims *Claims
-	switch user := user.(type) {
-	case *inport.CreateUserPayload:
-		claims = &Claims{
-			AuthID:   user.AuthID,
-			Email:    user.Email,
-			Name:     user.Name,
-			Role:     user.Role,
-			ImageUrl: user.ImageUrl,
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(expirationTime),
-			},
-		}
-	case *inport.UpdateUserPayload:
-		claims = &Claims{
-			ID:       user.ID.String(),
-			AuthID:   user.AuthID,
-			Email:    user.Email,
-			Name:     user.Name,
-			Role:     user.Role,
-			ImageUrl: user.ImageUrl,
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(expirationTime),
-			},
-		}
 
+	claims := &Claims{
+		ID:       user.ID.String(),
+		AuthID:   user.AuthID,
+		Email:    user.Email,
+		Name:     user.Name,
+		Role:     user.Role,
+		ImageUrl: user.ImageUrl,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

@@ -64,6 +64,23 @@ func (g *UsersService) GetUserByAuthID(authID string) (user *inport.UpdateUserPa
 		ImageUrl: u.ImageUrl,
 	}, nil
 }
+func (g *UsersService) GetAdmin(email string, password string) (user *inport.UpdateUserPayload, err error) {
+	u, err := g.usersPort.GetAdmin(email, password)
+	if err != nil {
+		return nil, err
+	}
+	if u == nil {
+		return nil, nil
+	}
+	return &inport.UpdateUserPayload{
+		ID:       u.ID,
+		AuthID:   u.AuthID,
+		Email:    u.Email,
+		Name:     u.Name,
+		Role:     u.Role,
+		ImageUrl: u.ImageUrl,
+	}, nil
+}
 
 func (g *UsersService) Like(like *inport.Like) error {
 	return g.usersPort.Like(outport.Like{

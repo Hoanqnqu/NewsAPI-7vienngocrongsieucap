@@ -49,6 +49,7 @@ type User struct {
 	ID        pgtype.UUID
 	AuthID    string
 	Email     pgtype.Text
+	Password  pgtype.Text
 	Name      pgtype.Text
 	Role      pgtype.Text
 	ImageUrl  pgtype.Text

@@ -6,7 +6,7 @@ type APIResponse[T any] struct {
 	Data       T      `json:"data"`
 }
 type APIResponseLogin struct {
-	StatusCode  int
-	Message     string
-	AccessToken string
+	StatusCode  int    `json:"status"`
+	Message     string `json:"message"`
+	AccessToken string `json:"token"`
 }

@@ -2,9 +2,10 @@ package outAdapter
 
 import (
 	"context"
-	"github.com/google/uuid"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
+
+	"github.com/google/uuid"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -88,6 +89,36 @@ func (u *UserAdapter) GetByAuthID(authID string) (outUser outport.User, err erro
 		ImageUrl:  dbUser.ImageUrl.String,
 	}
 	return outUser, nil
+}
+func (u *UserAdapter) GetAdmin(email string, password string) (user *outport.User, err error) {
+	query := db.New(u.pool)
+	dbUsers, err := query.GetAdmin(context.Background(), db.GetAdminParams{
+		Email: pgtype.Text{
+			String: email,
+			Valid:  true,
+		},
+		Password: pgtype.Text{
+			String: password,
+			Valid:  true,
+		},
+	})
+	if len(dbUsers) == 0 {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	user = &outport.User{
+		ID:        dbUsers[0].ID.Bytes,
+		AuthID:    dbUsers[0].AuthID,
+		Email:     dbUsers[0].Email.String,
+		CreatedAt: dbUsers[0].CreatedAt.Time,
+		Name:      dbUsers[0].Name.String,
+		Role:      dbUsers[0].Role.String,
+		ImageUrl:  dbUsers[0].ImageUrl.String,
+	}
+	return user, nil
 }
 
 func (u *UserAdapter) Like(like outport.Like) error {

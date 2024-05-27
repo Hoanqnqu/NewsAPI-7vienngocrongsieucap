@@ -18,6 +18,11 @@ type User struct {
 	DeletedAt *time.Time
 }
 
+type AdminLoginPayload struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 type CreateUserPayload struct {
 	AuthID   string
 	Email    string
@@ -43,6 +48,7 @@ type UsersUseCase interface {
 	GetAll() ([]*User, error)
 	Insert(user *CreateUserPayload) error
 	Update(user *UpdateUserPayload) error
+	GetAdmin(email string, password string) (user *UpdateUserPayload, err error)
 	GetUserByAuthID(authID string) (user *UpdateUserPayload, err error)
 	Like(like *Like) error
 	Unlike(like *Like) error

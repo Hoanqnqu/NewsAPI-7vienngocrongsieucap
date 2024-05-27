@@ -1,8 +1,9 @@
 package rest
 
 import (
-	"github.com/go-chi/chi/v5"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
 
@@ -22,12 +23,11 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 
 	router.Use(Logger)
 
-
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
 	router.Post("/login", userHandlers.Login)
-
+	router.Post("/adminlogin", userHandlers.AdminLogin)
 	router.Group(func(adminRouter chi.Router) {
 		adminRouter.Use(AdminMiddleware)
 

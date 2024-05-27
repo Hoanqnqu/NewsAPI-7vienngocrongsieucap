@@ -2,11 +2,13 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
+
 	"net/http"
 	"news-api/adapter/in/auth"
 	inport "news-api/application/port/in"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type UserHandlers struct {
@@ -27,7 +29,7 @@ func (u *UserHandlers) GetAll(response http.ResponseWriter, request *http.Reques
 			Message:    "Unknown err",
 		})
 
-	}
+	}	
 	json.NewEncoder(response).Encode(APIResponse[[]*inport.User]{
 		StatusCode: 200,
 		Message:    "Ok",
@@ -120,7 +122,16 @@ func (u *UserHandlers) Login(response http.ResponseWriter, request *http.Request
 			})
 			return
 		}
-		accessToken, err = auth.GenerateJWT(&user)
+		existUser, err = u.userUseCase.GetUserByAuthID(user.AuthID)
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
+			return
+		}
+		accessToken, err = auth.GenerateJWT(existUser)
 		if err != nil {
 			response.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(response).Encode(APIResponse[any]{
@@ -146,6 +157,53 @@ func (u *UserHandlers) Login(response http.ResponseWriter, request *http.Request
 		AccessToken: accessToken,
 	})
 }
+
+func (u *UserHandlers) AdminLogin(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	var user inport.AdminLoginPayload
+	err := json.NewDecoder(request.Body).Decode(&user)
+	var accessToken string
+	if err != nil {
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 400,
+			Message:    "Bad request"})
+		return
+	}
+	existUser, err := u.userUseCase.GetAdmin(user.Email, user.Password)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
+		return
+	}
+	if existUser == nil {
+		response.WriteHeader(400)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 400,
+			Message:    "Bad request",
+		})
+		return
+	}
+	accessToken, err = auth.GenerateJWT(existUser)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
+		return
+	}
+
+	json.NewEncoder(response).Encode(APIResponseLogin{
+		StatusCode:  200,
+		Message:     "Ok",
+		AccessToken: accessToken,
+	})
+}
+
 func (u *UserHandlers) Like(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	newsId := chi.URLParam(request, "newsId")

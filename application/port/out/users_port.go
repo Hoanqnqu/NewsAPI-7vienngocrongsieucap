@@ -24,6 +24,7 @@ type Like struct {
 
 type UsersPort interface {
 	GetAll() ([]db.User, error)
+	GetAdmin(email string, password string) (user *User, err error)
 	Insert(user User) error
 	Update(user User) error
 	GetByAuthID(authID string) (user User, err error)
