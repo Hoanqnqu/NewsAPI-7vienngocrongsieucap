@@ -127,4 +127,3 @@ WHERE news_id = $1
 -- name: InsertHasCategory :exec
 INSERT INTO has_categories (news_id, category_id)
     VALUES ($1, $2);
-
