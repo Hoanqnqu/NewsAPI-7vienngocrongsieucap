@@ -59,6 +59,23 @@ func (u *NewsAdapter) Insert(news outport.News) error {
 			Valid: true,
 		},
 	})
+	if err != nil {
+		for _, v := range news.Categories {
+			err = query.InsertHasCategory(context.Background(), db.InsertHasCategoryParams{
+				NewsID: pgtype.UUID{
+					Bytes: news.ID,
+					Valid: true,
+				},
+				CategoryID: pgtype.UUID{
+					Bytes: v,
+					Valid: true,
+				},
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return err
 }
 

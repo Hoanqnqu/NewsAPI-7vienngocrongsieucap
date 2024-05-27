@@ -52,8 +52,8 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 		userRouter.Get("/dummy", dummyHandler.Dummy)
 		userRouter.Post("/like/{newsId}", userHandlers.Like)
 		userRouter.Post("/unlike/{newsId}", userHandlers.Unlike)
-		userRouter.Post("/dislike/{newsId}", userHandlers.DisLike)
-		userRouter.Post("/unDislike/{newsId}", userHandlers.UnDisLike)
+		userRouter.Post("/dislike/{newsId}", userHandlers.Dislike)
+		userRouter.Post("/unDislike/{newsId}", userHandlers.UnDislike)
 	})
 
 	return router

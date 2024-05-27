@@ -263,6 +263,20 @@ func (q *Queries) InsertDisLike(ctx context.Context, arg InsertDisLikeParams) er
 	return err
 }
 
+const insertHasCategory = `-- name: InsertHasCategory :exec
+INSERT INTO has_categories (news_id, category_id) VALUES ($1, $2)
+`
+
+type InsertHasCategoryParams struct {
+	NewsID     pgtype.UUID
+	CategoryID pgtype.UUID
+}
+
+func (q *Queries) InsertHasCategory(ctx context.Context, arg InsertHasCategoryParams) error {
+	_, err := q.db.Exec(ctx, insertHasCategory, arg.NewsID, arg.CategoryID)
+	return err
+}
+
 const insertLike = `-- name: InsertLike :exec
 INSERT INTO likes (news_id, user_id) VALUES ($1, $2)
 `

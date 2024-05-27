@@ -20,13 +20,14 @@ type News struct {
 	DeletedAt   *time.Time `json:"deleted_at"`
 }
 type CreateNewsPayload struct {
-	Author      string    `json:"author"`
-	Title       string    `json:"title"`
-	Content     string    `json:"content"`
-	Description string    `json:"description"`
-	URL         string    `json:"url"`
-	ImageURL    string    `json:"image_url"`
-	PublishAt   time.Time `json:"publish_at"`
+	Author      string      `json:"author"`
+	Title       string      `json:"title"`
+	Content     string      `json:"content"`
+	Description string      `json:"description"`
+	URL         string      `json:"url"`
+	ImageURL    string      `json:"image_url"`
+	PublishAt   time.Time   `json:"publish_at"`
+	Categories  []uuid.UUID `json:"categories"`
 }
 
 type UpdateNewsPayload struct {

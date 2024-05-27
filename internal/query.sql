@@ -106,3 +106,6 @@ INSERT INTO likes (news_id, user_id) VALUES ($1, $2);
 
 -- name: DeleteDisLike :exec
 DELETE from likes Where news_id = $1 and user_id = $2;
+
+-- name: InsertHasCategory :exec
+INSERT INTO has_categories (news_id, category_id) VALUES ($1, $2);
