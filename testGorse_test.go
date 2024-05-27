@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/zhenghaoz/gorse/client"
+	"time"
 )
 
 var _ = Describe("TestGorse", func() {
@@ -12,11 +13,11 @@ var _ = Describe("TestGorse", func() {
 		gorse := client.NewGorseClient("http://127.0.0.1:8087", "")
 
 		_, err := gorse.InsertItem(context.Background(), client.Item{
-			ItemId:     "testnha",
+			ItemId:     "hihi",
 			IsHidden:   false,
 			Labels:     []string{"test"},
 			Categories: []string{"ngu"},
-			Timestamp:  "2022/06/05 07:06",
+			Timestamp:  time.Now().String(),
 			Comment:    "hay",
 		})
 		Expect(err).ToNot(HaveOccurred())
