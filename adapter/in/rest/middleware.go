@@ -76,8 +76,6 @@ func UserMiddleware(next http.Handler) http.Handler {
 			})
 			return
 		}
-
-		tokenString = tokenString[len("Bearer "):]
 		claim, err := auth.ExtractUser(tokenString)
 		log.Println(claim)
 		if err != nil {

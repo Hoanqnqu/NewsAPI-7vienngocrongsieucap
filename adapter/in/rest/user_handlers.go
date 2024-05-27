@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"encoding/json"
 
 	"net/http"
@@ -12,11 +13,12 @@ import (
 )
 
 type UserHandlers struct {
-	userUseCase inport.UsersUseCase
+	userUseCase      inport.UsersUseCase
+	recommendUseCase inport.RecommendUseCase
 }
 
-func NewUserHandlers(userUseCase inport.UsersUseCase) *UserHandlers {
-	return &UserHandlers{userUseCase: userUseCase}
+func NewUserHandlers(userUseCase inport.UsersUseCase, recommendUseCase inport.RecommendUseCase) *UserHandlers {
+	return &UserHandlers{userUseCase: userUseCase, recommendUseCase: recommendUseCase}
 }
 
 func (u *UserHandlers) GetAll(response http.ResponseWriter, request *http.Request) {
@@ -29,7 +31,7 @@ func (u *UserHandlers) GetAll(response http.ResponseWriter, request *http.Reques
 			Message:    "Unknown err",
 		})
 
-	}	
+	}
 	json.NewEncoder(response).Encode(APIResponse[[]*inport.User]{
 		StatusCode: 200,
 		Message:    "Ok",
@@ -57,6 +59,24 @@ func (u *UserHandlers) Insert(response http.ResponseWriter, request *http.Reques
 		})
 		return
 	}
+	existUser, err := u.userUseCase.GetUserByAuthID(user.AuthID)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
+		return
+	}
+	if err = u.recommendUseCase.InsertUser(context.Background(), existUser.ID); err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
+		return
+	}
+
 	json.NewEncoder(response).Encode(APIResponse[any]{
 		StatusCode: 200,
 		Message:    "Ok",
@@ -124,6 +144,14 @@ func (u *UserHandlers) Login(response http.ResponseWriter, request *http.Request
 		}
 		existUser, err = u.userUseCase.GetUserByAuthID(user.AuthID)
 		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
+			return
+		}
+		if err = u.recommendUseCase.InsertUser(context.Background(), existUser.ID); err != nil {
 			response.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(response).Encode(APIResponse[any]{
 				StatusCode: 500,
@@ -248,7 +276,7 @@ func (u *UserHandlers) Unlike(response http.ResponseWriter, request *http.Reques
 	})
 }
 
-func (u *UserHandlers) DisLike(response http.ResponseWriter, request *http.Request) {
+func (u *UserHandlers) Dislike(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	newsId := chi.URLParam(request, "newsId")
 	user := request.Context().Value("user").(inport.UpdateUserPayload)
@@ -270,7 +298,7 @@ func (u *UserHandlers) DisLike(response http.ResponseWriter, request *http.Reque
 	})
 }
 
-func (u *UserHandlers) UnDisLike(response http.ResponseWriter, request *http.Request) {
+func (u *UserHandlers) UnDislike(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	newsId := chi.URLParam(request, "newsId")
 	user := request.Context().Value("user").(inport.UpdateUserPayload)

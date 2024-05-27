@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/zhenghaoz/gorse/client"
 	"log"
 	"net/http"
 	"news-api/adapter/in/rest"
@@ -23,6 +24,7 @@ func main() {
 		"5432",
 		"postgres",
 	)
+	gorse := client.NewGorseClient("http://127.0.0.1:8087", "")
 	pool, err := pgxpool.New(ctx, connectionString)
 	if err != nil {
 		log.Fatalln("Can not connect to sql")
@@ -37,14 +39,16 @@ func main() {
 	userAdapter := outAdapter.NewUserAdapter(pool)
 	categoryAdapter := outAdapter.NewCategoryAdapter(pool)
 	newsAdapter := outAdapter.NewNewsAdapter(pool)
+	gorseAdaper := outAdapter.NewGorseAdapter(gorse)
 	//init Use case
 	dummyUseCase := service.NewDummyService(dummyAdapter)
 	userUseCase := service.NewUsersService(userAdapter)
 	categoryUseCase := service.NewCategoriesService(categoryAdapter)
-	newsUseCase := service.NewNewsService(newsAdapter)
+	newsUseCase := service.NewNewsService(newsAdapter, gorseAdaper)
+	recommendUseCase := service.NewRecommendService(gorseAdaper)
 	//init handler
 	dummyHandler := rest.NewDummyHandler(dummyUseCase)
-	userHandler := rest.NewUserHandlers(userUseCase)
+	userHandler := rest.NewUserHandlers(userUseCase, recommendUseCase)
 	categoryHandler := rest.NewCategoryHandlers(categoryUseCase)
 	newsHandler := rest.NewNewsHandlers(newsUseCase)
 

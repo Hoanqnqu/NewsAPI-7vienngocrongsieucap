@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	inport "news-api/application/port/in"
 	outport "news-api/application/port/out"
 
@@ -8,11 +9,12 @@ import (
 )
 
 type NewsService struct {
-	newsPort outport.NewsPort
+	newsPort             outport.NewsPort
+	recommendationSystem outport.RecommendationSystem
 }
 
-func NewNewsService(newsPort outport.NewsPort) *NewsService {
-	return &NewsService{newsPort: newsPort}
+func NewNewsService(newsPort outport.NewsPort, recommendationSystem outport.RecommendationSystem) *NewsService {
+	return &NewsService{newsPort: newsPort, recommendationSystem: recommendationSystem}
 }
 func (g *NewsService) GetAll() ([]*inport.News, error) {
 	newsList, err := g.newsPort.GetAll()
@@ -29,8 +31,9 @@ func (g *NewsService) GetAll() ([]*inport.News, error) {
 }
 
 func (g *NewsService) Insert(news *inport.CreateNewsPayload) error {
-	return g.newsPort.Insert(outport.News{
-		ID:          uuid.New(),
+	id := uuid.New()
+	err := g.newsPort.Insert(outport.News{
+		ID:          id,
 		Title:       news.Title,
 		Content:     news.Content,
 		Description: news.Description,
@@ -38,7 +41,12 @@ func (g *NewsService) Insert(news *inport.CreateNewsPayload) error {
 		Url:         news.URL,
 		ImageUrl:    news.ImageURL,
 		PublishAt:   news.PublishAt,
+		Categories:  news.Categories,
 	})
+	if err == nil {
+		return g.recommendationSystem.InsertNews(context.Background(), id, news.Categories)
+	}
+	return nil
 }
 
 func (g *NewsService) Update(news *inport.UpdateNewsPayload) error {
@@ -53,4 +61,3 @@ func (g *NewsService) Update(news *inport.UpdateNewsPayload) error {
 		PublishAt:   news.PublishAt,
 	})
 }
-

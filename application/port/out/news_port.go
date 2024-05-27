@@ -16,6 +16,7 @@ type News struct {
 	Url         string
 	ImageUrl    string
 	PublishAt   time.Time
+	Categories  []uuid.UUID
 }
 
 type NewsPort interface {
