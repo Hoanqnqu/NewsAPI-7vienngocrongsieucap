@@ -18,6 +18,8 @@ type News struct {
 	CreatedAt   *time.Time `json:"created_at"`
 	UpdatedAt   *time.Time `json:"updated_at"`
 	DeletedAt   *time.Time `json:"deleted_at"`
+	IsLiked     bool       `json:"isLiked"`
+	IsDisliked  bool       `json:"isDisliked"`
 }
 type CreateNewsPayload struct {
 	Author      string      `json:"author"`
@@ -45,4 +47,5 @@ type NewsUseCase interface {
 	GetAll() ([]*News, error)
 	Insert(news *CreateNewsPayload) error
 	Update(news *UpdateNewsPayload) error
+	GetNewsByID(newsID, userID string) (*News, error)
 }

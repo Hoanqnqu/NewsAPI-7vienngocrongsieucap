@@ -49,6 +49,17 @@ func (g *NewsService) Insert(news *inport.CreateNewsPayload) error {
 	return nil
 }
 
+func (g *NewsService) GetNewsByID(newsID, userID string) (*inport.News, error) {
+	news, isLiked, isDislike, err := g.newsPort.GetNewsByID(newsID, userID)
+	if err != nil {
+		return nil, err
+	}
+	convertedNews := MapNews(*news)
+	convertedNews.IsLiked = isLiked
+	convertedNews.IsDisliked = isDislike
+	return convertedNews, nil
+}
+
 func (g *NewsService) Update(news *inport.UpdateNewsPayload) error {
 	return g.newsPort.Update(outport.News{
 		ID:          news.ID,

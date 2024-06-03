@@ -23,4 +23,5 @@ type NewsPort interface {
 	GetAll() ([]db.News, error)
 	Insert(news News) error
 	Update(news News) error
+	GetNewsByID(newsID, userID string) (*db.News, bool, bool, error)
 }

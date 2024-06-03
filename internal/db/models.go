@@ -45,6 +45,11 @@ type News struct {
 	DeletedAt   pgtype.Timestamp
 }
 
+type Safe struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
 type User struct {
 	ID        pgtype.UUID
 	AuthID    string

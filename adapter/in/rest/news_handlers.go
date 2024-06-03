@@ -96,5 +96,23 @@ func (u *NewsHandlers) Update(response http.ResponseWriter, request *http.Reques
 		StatusCode: 200,
 		Message:    "Ok",
 	})
+}
+func (u *NewsHandlers) GetNewsByID(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	newsId := chi.URLParam(request, "newsId")
+	user := request.Context().Value("user").(inport.UpdateUserPayload)
+	news, err := u.newsUseCase.GetNewsByID(newsId, user.ID.String())
+	if err != nil {
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 404,
+			Message:    "Not Found"})
+		return
+	}
 
+	json.NewEncoder(response).Encode(APIResponse[*inport.News]{
+		StatusCode: 200,
+		Message:    "Ok",
+		Data:       news,
+	})
 }

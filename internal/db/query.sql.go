@@ -21,7 +21,7 @@ func (q *Queries) DeleteCategory(ctx context.Context, id pgtype.UUID) error {
 }
 
 const deleteDisLike = `-- name: DeleteDisLike :exec
-DELETE from likes Where news_id = $1 and user_id = $2
+DELETE from dislikes Where news_id = $1 and user_id = $2
 `
 
 type DeleteDisLikeParams struct {
@@ -54,6 +54,20 @@ UPDATE news SET deleted_at = NOW() WHERE id = $1
 
 func (q *Queries) DeleteNews(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteNews, id)
+	return err
+}
+
+const deleteSave = `-- name: DeleteSave :exec
+DELETE from saves Where news_id = $1 and user_id = $2
+`
+
+type DeleteSaveParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteSave(ctx context.Context, arg DeleteSaveParams) error {
+	_, err := q.db.Exec(ctx, deleteSave, arg.NewsID, arg.UserID)
 	return err
 }
 
@@ -213,6 +227,85 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getDislike = `-- name: GetDislike :one
+SELECT news_id, user_id from dislikes Where news_id = $1 and user_id = $2
+`
+
+type GetDislikeParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetDislike(ctx context.Context, arg GetDislikeParams) (Dislike, error) {
+	row := q.db.QueryRow(ctx, getDislike, arg.NewsID, arg.UserID)
+	var i Dislike
+	err := row.Scan(&i.NewsID, &i.UserID)
+	return i, err
+}
+
+const getLike = `-- name: GetLike :one
+SELECT news_id, user_id from likes Where news_id = $1 and user_id = $2
+`
+
+type GetLikeParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetLike(ctx context.Context, arg GetLikeParams) (Like, error) {
+	row := q.db.QueryRow(ctx, getLike, arg.NewsID, arg.UserID)
+	var i Like
+	err := row.Scan(&i.NewsID, &i.UserID)
+	return i, err
+}
+
+const getNews = `-- name: GetNews :one
+select id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at from news where id = $1
+`
+
+func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (News, error) {
+	row := q.db.QueryRow(ctx, getNews, id)
+	var i News
+	err := row.Scan(
+		&i.ID,
+		&i.Author,
+		&i.Title,
+		&i.Description,
+		&i.Content,
+		&i.Url,
+		&i.ImageUrl,
+		&i.PublishAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getSaves = `-- name: GetSaves :many
+SELECT news_id from saves Where user_id = $1
+`
+
+func (q *Queries) GetSaves(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, getSaves, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var news_id pgtype.UUID
+		if err := rows.Scan(&news_id); err != nil {
+			return nil, err
+		}
+		items = append(items, news_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByAuthID = `-- name: GetUserByAuthID :one
 SELECT id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at FROM users WHERE users.auth_id = $1 LIMIT 1
 `
@@ -250,7 +343,7 @@ func (q *Queries) InsertCategory(ctx context.Context, arg InsertCategoryParams) 
 }
 
 const insertDisLike = `-- name: InsertDisLike :exec
-INSERT INTO likes (news_id, user_id) VALUES ($1, $2)
+INSERT INTO dislikes (news_id, user_id) VALUES ($1, $2)
 `
 
 type InsertDisLikeParams struct {
@@ -339,6 +432,20 @@ func (q *Queries) InsertNews(ctx context.Context, arg InsertNewsParams) error {
 		arg.ImageUrl,
 		arg.PublishAt,
 	)
+	return err
+}
+
+const insertSave = `-- name: InsertSave :exec
+Insert into saves (news_id, user_id) values ($1, $2)
+`
+
+type InsertSaveParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) InsertSave(ctx context.Context, arg InsertSaveParams) error {
+	_, err := q.db.Exec(ctx, insertSave, arg.NewsID, arg.UserID)
 	return err
 }
 

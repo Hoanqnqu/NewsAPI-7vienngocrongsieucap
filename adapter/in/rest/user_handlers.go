@@ -20,7 +20,24 @@ type UserHandlers struct {
 func NewUserHandlers(userUseCase inport.UsersUseCase, recommendUseCase inport.RecommendUseCase) *UserHandlers {
 	return &UserHandlers{userUseCase: userUseCase, recommendUseCase: recommendUseCase}
 }
+func (u *UserHandlers) GetSavedNews(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	user := request.Context().Value("user").(inport.UpdateUserPayload)
+	newsList, err := u.userUseCase.GetSavedNews(user.ID.String())
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
 
+	}
+	json.NewEncoder(response).Encode(APIResponse[[]uuid.UUID]{
+		StatusCode: 200,
+		Message:    "Ok",
+		Data:       newsList,
+	})
+}
 func (u *UserHandlers) GetAll(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	usersList, err := u.userUseCase.GetAll()
@@ -254,28 +271,6 @@ func (u *UserHandlers) Like(response http.ResponseWriter, request *http.Request)
 	})
 }
 
-func (u *UserHandlers) Unlike(response http.ResponseWriter, request *http.Request) {
-	response.Header().Set("Content-Type", "application/json")
-	newsId := chi.URLParam(request, "newsId")
-	user := request.Context().Value("user").(inport.UpdateUserPayload)
-	err := u.userUseCase.Unlike(&inport.Like{
-		UserId: user.ID.String(),
-		NewsId: newsId,
-	})
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(response).Encode(APIResponse[any]{
-			StatusCode: 500,
-			Message:    "Unknown err",
-		})
-		return
-	}
-	json.NewEncoder(response).Encode(APIResponse[any]{
-		StatusCode: 200,
-		Message:    "Ok",
-	})
-}
-
 func (u *UserHandlers) Dislike(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	newsId := chi.URLParam(request, "newsId")
@@ -293,16 +288,16 @@ func (u *UserHandlers) Dislike(response http.ResponseWriter, request *http.Reque
 		return
 	}
 	json.NewEncoder(response).Encode(APIResponse[any]{
-		StatusCode: 200,
+		StatusCode: 201,
 		Message:    "Ok",
 	})
 }
 
-func (u *UserHandlers) UnDislike(response http.ResponseWriter, request *http.Request) {
+func (u *UserHandlers) Save(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	newsId := chi.URLParam(request, "newsId")
 	user := request.Context().Value("user").(inport.UpdateUserPayload)
-	err := u.userUseCase.UnDisLike(&inport.Like{
+	err := u.userUseCase.Save(&inport.Like{
 		UserId: user.ID.String(),
 		NewsId: newsId,
 	})
@@ -315,7 +310,7 @@ func (u *UserHandlers) UnDislike(response http.ResponseWriter, request *http.Req
 		return
 	}
 	json.NewEncoder(response).Encode(APIResponse[any]{
-		StatusCode: 200,
+		StatusCode: 201,
 		Message:    "Ok",
 	})
 }

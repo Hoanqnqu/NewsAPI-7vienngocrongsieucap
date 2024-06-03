@@ -89,13 +89,6 @@ func (g *UsersService) Like(like *inport.Like) error {
 	})
 }
 
-func (g *UsersService) Unlike(like *inport.Like) error {
-	return g.usersPort.Unlike(outport.Like{
-		UserID: like.UserId,
-		NewsID: like.NewsId,
-	})
-}
-
 func (g *UsersService) DisLike(like *inport.Like) error {
 	return g.usersPort.DisLike(outport.Like{
 		UserID: like.UserId,
@@ -103,9 +96,13 @@ func (g *UsersService) DisLike(like *inport.Like) error {
 	})
 }
 
-func (g *UsersService) UnDisLike(like *inport.Like) error {
-	return g.usersPort.UnDisLike(outport.Like{
+func (g *UsersService) Save(like *inport.Like) error {
+	return g.usersPort.Save(outport.Like{
 		UserID: like.UserId,
 		NewsID: like.NewsId,
 	})
+}
+
+func (g *UsersService) GetSavedNews(userID string) ([]uuid.UUID, error) {
+	return g.usersPort.GetSavedNews(userID)
 }

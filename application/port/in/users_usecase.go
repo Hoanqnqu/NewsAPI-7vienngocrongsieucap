@@ -51,7 +51,7 @@ type UsersUseCase interface {
 	GetAdmin(email string, password string) (user *UpdateUserPayload, err error)
 	GetUserByAuthID(authID string) (user *UpdateUserPayload, err error)
 	Like(like *Like) error
-	Unlike(like *Like) error
 	DisLike(like *Like) error
-	UnDisLike(like *Like) error
+	Save(like *Like) error
+	GetSavedNews(userID string) ([]uuid.UUID, error)
 }

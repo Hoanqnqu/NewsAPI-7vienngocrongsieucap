@@ -2,6 +2,9 @@ package outAdapter
 
 import (
 	"context"
+	"errors"
+	"github.com/jackc/pgx/v5/pgconn"
+	"news-api/application/domain/service"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
@@ -123,7 +126,7 @@ func (u *UserAdapter) GetAdmin(email string, password string) (user *outport.Use
 
 func (u *UserAdapter) Like(like outport.Like) error {
 	query := db.New(u.pool)
-	return query.InsertLike(context.Background(), db.InsertLikeParams{
+	err := query.InsertLike(context.Background(), db.InsertLikeParams{
 		NewsID: pgtype.UUID{
 			Bytes: uuid.MustParse(like.NewsID),
 			Valid: true,
@@ -133,25 +136,27 @@ func (u *UserAdapter) Like(like outport.Like) error {
 			Valid: true,
 		},
 	})
-}
-
-func (u *UserAdapter) Unlike(like outport.Like) error {
-	query := db.New(u.pool)
-	return query.DeleteLike(context.Background(), db.DeleteLikeParams{
-		NewsID: pgtype.UUID{
-			Bytes: uuid.MustParse(like.NewsID),
-			Valid: true,
-		},
-		UserID: pgtype.UUID{
-			Bytes: uuid.MustParse(like.UserID),
-			Valid: true,
-		},
-	})
+	if err != nil {
+		var pgError *pgconn.PgError
+		if errors.As(err, &pgError) && pgError.Code == "23505" {
+			err = query.DeleteLike(context.Background(), db.DeleteLikeParams{
+				NewsID: pgtype.UUID{
+					Bytes: uuid.MustParse(like.NewsID),
+					Valid: true,
+				},
+				UserID: pgtype.UUID{
+					Bytes: uuid.MustParse(like.UserID),
+					Valid: true,
+				},
+			})
+		}
+	}
+	return err
 }
 
 func (u *UserAdapter) DisLike(like outport.Like) error {
 	query := db.New(u.pool)
-	return query.InsertDisLike(context.Background(), db.InsertDisLikeParams{
+	err := query.InsertDisLike(context.Background(), db.InsertDisLikeParams{
 		NewsID: pgtype.UUID{
 			Bytes: uuid.MustParse(like.NewsID),
 			Valid: true,
@@ -161,11 +166,27 @@ func (u *UserAdapter) DisLike(like outport.Like) error {
 			Valid: true,
 		},
 	})
+	if err != nil {
+		var pgError *pgconn.PgError
+		if errors.As(err, &pgError) && pgError.Code == "23505" {
+			err = query.DeleteDisLike(context.Background(), db.DeleteDisLikeParams{
+				NewsID: pgtype.UUID{
+					Bytes: uuid.MustParse(like.NewsID),
+					Valid: true,
+				},
+				UserID: pgtype.UUID{
+					Bytes: uuid.MustParse(like.UserID),
+					Valid: true,
+				},
+			})
+		}
+	}
+	return err
 }
 
-func (u *UserAdapter) UnDisLike(like outport.Like) error {
+func (u *UserAdapter) Save(like outport.Like) error {
 	query := db.New(u.pool)
-	return query.DeleteDisLike(context.Background(), db.DeleteDisLikeParams{
+	err := query.InsertSave(context.Background(), db.InsertSaveParams{
 		NewsID: pgtype.UUID{
 			Bytes: uuid.MustParse(like.NewsID),
 			Valid: true,
@@ -175,4 +196,37 @@ func (u *UserAdapter) UnDisLike(like outport.Like) error {
 			Valid: true,
 		},
 	})
+	if err != nil {
+		var pgError *pgconn.PgError
+		if errors.As(err, &pgError) && pgError.Code == "23505" {
+			err = query.DeleteSave(context.Background(), db.DeleteSaveParams{
+				NewsID: pgtype.UUID{
+					Bytes: uuid.MustParse(like.NewsID),
+					Valid: true,
+				},
+				UserID: pgtype.UUID{
+					Bytes: uuid.MustParse(like.UserID),
+					Valid: true,
+				},
+			})
+		}
+	}
+	return err
+}
+
+func (u *UserAdapter) GetSavedNews(userID string) ([]uuid.UUID, error) {
+	query := db.New(u.pool)
+	response, err := query.GetSaves(context.Background(), pgtype.UUID{
+		Bytes: uuid.MustParse(userID),
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	rs := make([]uuid.UUID, len(response))
+	for i, v := range response {
+		rs[i] = service.ToUUID(v)
+	}
+	return rs, nil
+
 }

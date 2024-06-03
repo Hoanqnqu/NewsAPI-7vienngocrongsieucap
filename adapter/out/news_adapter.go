@@ -2,6 +2,7 @@ package outAdapter
 
 import (
 	"context"
+	"github.com/google/uuid"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
@@ -117,4 +118,43 @@ func (u *NewsAdapter) Update(news outport.News) error {
 		},
 	})
 	return err
+}
+
+func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *db.News, isLiked bool, isDisliked bool, err error) {
+	query := db.New(u.pool)
+	_news, err := query.GetNews(context.Background(), pgtype.UUID{
+		Bytes: uuid.MustParse(newsID),
+		Valid: true,
+	})
+	if err != nil {
+		return nil, false, false, err
+	}
+	news = &_news
+	_, err = query.GetLike(context.Background(), db.GetLikeParams{
+		NewsID: pgtype.UUID{
+			Bytes: uuid.MustParse(newsID),
+			Valid: true,
+		},
+		UserID: pgtype.UUID{
+			Bytes: uuid.MustParse(userID),
+			Valid: true,
+		},
+	})
+	if err == nil {
+		isLiked = true
+	}
+	_, err = query.GetDislike(context.Background(), db.GetDislikeParams{
+		NewsID: pgtype.UUID{
+			Bytes: uuid.MustParse(newsID),
+			Valid: true,
+		},
+		UserID: pgtype.UUID{
+			Bytes: uuid.MustParse(userID),
+			Valid: true,
+		},
+	})
+	if err == nil {
+		isDisliked = true
+	}
+	return
 }

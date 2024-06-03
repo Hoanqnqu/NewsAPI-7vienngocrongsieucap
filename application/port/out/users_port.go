@@ -29,7 +29,7 @@ type UsersPort interface {
 	Update(user User) error
 	GetByAuthID(authID string) (user User, err error)
 	Like(like Like) error
-	Unlike(like Like) error
 	DisLike(like Like) error
-	UnDisLike(like Like) error
+	Save(like Like) error
+	GetSavedNews(userID string) ([]uuid.UUID, error)
 }

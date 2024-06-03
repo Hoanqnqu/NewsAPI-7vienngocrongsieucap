@@ -51,9 +51,11 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 		userRouter.Use(UserMiddleware)
 		userRouter.Get("/dummy", dummyHandler.Dummy)
 		userRouter.Post("/like/{newsId}", userHandlers.Like)
-		userRouter.Post("/unlike/{newsId}", userHandlers.Unlike)
 		userRouter.Post("/dislike/{newsId}", userHandlers.Dislike)
-		userRouter.Post("/unDislike/{newsId}", userHandlers.UnDislike)
+		userRouter.Post("/save/{newsId}", userHandlers.Save)
+		userRouter.Get("/saved", userHandlers.GetSavedNews)
+		userRouter.Get("/news/{newsId}", newsHandlers.GetNewsByID)
+
 	})
 
 	return router

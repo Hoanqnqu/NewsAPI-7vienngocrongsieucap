@@ -102,10 +102,28 @@ INSERT INTO likes (news_id, user_id) VALUES ($1, $2);
 DELETE from likes Where news_id = $1 and user_id = $2;
 
 -- name: InsertDisLike :exec
-INSERT INTO likes (news_id, user_id) VALUES ($1, $2);
+INSERT INTO dislikes (news_id, user_id) VALUES ($1, $2);
 
 -- name: DeleteDisLike :exec
-DELETE from likes Where news_id = $1 and user_id = $2;
+DELETE from dislikes Where news_id = $1 and user_id = $2;
 
 -- name: InsertHasCategory :exec
 INSERT INTO has_categories (news_id, category_id) VALUES ($1, $2);
+
+-- name: InsertSave :exec
+Insert into saves (news_id, user_id) values ($1, $2);
+
+-- name: DeleteSave :exec
+DELETE from saves Where news_id = $1 and user_id = $2;
+
+-- name: GetSaves :many
+SELECT news_id from saves Where user_id = $1;
+
+-- name: GetLike :one
+SELECT * from likes Where news_id = $1 and user_id = $2;
+
+-- name: GetDislike :one
+SELECT * from dislikes Where news_id = $1 and user_id = $2;
+
+-- name: GetNews :one
+select * from news where id = $1;
