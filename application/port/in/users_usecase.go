@@ -24,11 +24,11 @@ type AdminLoginPayload struct {
 }
 
 type CreateUserPayload struct {
-	AuthID   string
-	Email    string
-	Name     string
-	Role     string
-	ImageUrl string
+	AuthID   string `json:"auth_id"`
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	Role     string `json:"role"`
+	ImageUrl string `json:"image_url"`
 }
 
 type UpdateUserPayload struct {
