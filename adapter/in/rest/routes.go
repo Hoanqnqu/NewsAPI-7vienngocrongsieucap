@@ -26,6 +26,7 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
+	router.Get("/news", newsHandlers.GetAll)
 	router.Post("/login", userHandlers.Login)
 	router.Post("/adminlogin", userHandlers.AdminLogin)
 	router.Group(func(adminRouter chi.Router) {
@@ -42,7 +43,7 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 		adminRouter.Put("/categories/{id}", categoryHandlers.Update)
 
 		// News routes
-		adminRouter.Get("/news", newsHandlers.GetAll)
+		// adminRouter.Get("/news", newsHandlers.GetAll)
 		adminRouter.Post("/news", newsHandlers.Insert)
 		adminRouter.Put("/news/{id}", newsHandlers.Update)
 	})
