@@ -28,6 +28,7 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 	})
 	router.Get("/news", newsHandlers.GetAll)
 	router.Post("/login", userHandlers.Login)
+	router.Get("/news/{newsId}", newsHandlers.GetNewsByID)
 	router.Post("/adminlogin", userHandlers.AdminLogin)
 	router.Group(func(adminRouter chi.Router) {
 		adminRouter.Use(AdminMiddleware)
@@ -55,7 +56,6 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 		userRouter.Post("/dislike/{newsId}", userHandlers.Dislike)
 		userRouter.Post("/save/{newsId}", userHandlers.Save)
 		userRouter.Get("/saved", userHandlers.GetSavedNews)
-		userRouter.Get("/news/{newsId}", newsHandlers.GetNewsByID)
 	})
 
 	return router

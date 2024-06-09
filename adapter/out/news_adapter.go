@@ -3,6 +3,7 @@ package outAdapter
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
@@ -159,33 +160,44 @@ func (u *NewsAdapter) Update(news outport.News) error {
 	return err
 }
 
+// GetNewsByID retrieves a news item by its ID, including whether the user has liked or disliked it.
+// It returns the news item, whether the user has liked it, and whether the user has disliked it, or an error if there was a problem retrieving the data.
 func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.NewsWithCategory, isLiked bool, isDisliked bool, err error) {
+	// Create a new database query object
 	query := db.New(u.pool)
+	// Get the news item from the database
 	_news, err := query.GetNews(context.Background(), pgtype.UUID{
 		Bytes: uuid.MustParse(newsID),
 		Valid: true,
 	})
+
+	// If there was an error retrieving the news item, return the error
 	if err != nil {
 		return nil, false, false, err
 	}
+
+	// Unmarshal the category IDs from the database into a slice of UUID objects
 	var category_ids []pgtype.UUID
-
-	news.Author = _news.Author
-	news.Content = _news.Content
-	news.Description = _news.Description
-	news.Title = _news.Title
-	news.Url = _news.Url
-	news.ImageUrl = _news.ImageUrl
-	news.PublishAt = _news.PublishAt
-	news.ID = _news.ID
-
 	err = json.Unmarshal(_news.CategoryIds, &category_ids)
 	if err != nil {
 		return nil, false, false, err
 	}
-	news.Categories = category_ids
 
-	_, err = query.GetLike(context.Background(), db.GetLikeParams{
+	// Populate the news object with the retrieved data
+	news = &outport.NewsWithCategory{
+		Author:      _news.Author,
+		Content:     _news.Content,
+		Description: _news.Description,
+		Title:       _news.Title,
+		Url:         _news.Url,
+		ImageUrl:    _news.ImageUrl,
+		PublishAt:   _news.PublishAt,
+		ID:          _news.ID,
+		Categories:  category_ids,
+	}
+	fmt.Println(newsID, userID)
+	// Check whether the user has liked the news item
+	_, _err := query.GetLike(context.Background(), db.GetLikeParams{
 		NewsID: pgtype.UUID{
 			Bytes: uuid.MustParse(newsID),
 			Valid: true,
@@ -195,10 +207,12 @@ func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.N
 			Valid: true,
 		},
 	})
-	if err == nil {
+	if _err == nil {
 		isLiked = true
 	}
-	_, err = query.GetDislike(context.Background(), db.GetDislikeParams{
+
+	// Check whether the user has disliked the news item
+	_, _err = query.GetDislike(context.Background(), db.GetDislikeParams{
 		NewsID: pgtype.UUID{
 			Bytes: uuid.MustParse(newsID),
 			Valid: true,
@@ -208,8 +222,9 @@ func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.N
 			Valid: true,
 		},
 	})
-	if err == nil {
+	if _err == nil {
 		isDisliked = true
 	}
+	fmt.Println(isLiked, isDisliked)
 	return
 }

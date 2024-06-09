@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"news-api/adapter/in/auth"
 	inport "news-api/application/port/in"
 
 	"github.com/go-chi/chi/v5"
@@ -100,8 +101,20 @@ func (u *NewsHandlers) Update(response http.ResponseWriter, request *http.Reques
 func (u *NewsHandlers) GetNewsByID(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	newsId := chi.URLParam(request, "newsId")
-	user := request.Context().Value("user").(inport.UpdateUserPayload)
-	news, err := u.newsUseCase.GetNewsByID(newsId, user.ID.String())
+	tokenString := request.Header.Get("Authorization")
+	tokenString = tokenString[len("Bearer "):]
+	userId := uuid.Nil.String()
+	if tokenString != "" {
+		claim, err := auth.ExtractUser(tokenString)
+		fmt.Println(err)
+		if err == nil {
+			userId = claim["ID"].(string)
+			fmt.Println("-------------id:" + userId)
+		}
+	}
+
+	news, err := u.newsUseCase.GetNewsByID(newsId, userId)
+	fmt.Println(err)
 	if err != nil {
 		response.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(response).Encode(APIResponse[any]{

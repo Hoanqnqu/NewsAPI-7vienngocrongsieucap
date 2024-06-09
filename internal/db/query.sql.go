@@ -331,6 +331,8 @@ GROUP BY
     n.created_at,
     n.updated_at,
     n.deleted_at
+LIMIT 1	
+
 `
 
 type GetNewsRow struct {

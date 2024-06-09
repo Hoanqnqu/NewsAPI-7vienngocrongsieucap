@@ -16,7 +16,7 @@ import (
 func main() {
 	ctx := context.Background()
 	//connectionString := "postgres://koyeb-adm:D0ZGrelqfRI6@ep-empty-meadow-a15erppx.ap-southeast-1.pg.koyeb.app/koyebdb"
-	connectionString := fmt.Sprintf(
+	connectionString := fmt.Sprintf(																					
 		"postgres://%s:%s@%s:%s/%s",
 		"postgres",
 		"password",
