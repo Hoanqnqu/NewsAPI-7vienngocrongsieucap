@@ -1,10 +1,10 @@
 package outport
 
 import (
-	"news-api/internal/db"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type News struct {
@@ -18,10 +18,24 @@ type News struct {
 	PublishAt   time.Time
 	Categories  []uuid.UUID
 }
+type NewsWithCategory struct {
+	ID          pgtype.UUID
+	Author      pgtype.Text
+	Title       pgtype.Text
+	Description pgtype.Text
+	Content     pgtype.Text
+	Url         pgtype.Text
+	ImageUrl    pgtype.Text
+	Categories  []pgtype.UUID
+	PublishAt   pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	DeletedAt   pgtype.Timestamp
+}
 
 type NewsPort interface {
-	GetAll() ([]db.News, error)
+	GetAll() ([]NewsWithCategory, error)
 	Insert(news News) error
 	Update(news News) error
-	GetNewsByID(newsID, userID string) (*db.News, bool, bool, error)
+	GetNewsByID(newsID, userID string) (*NewsWithCategory, bool, bool, error)
 }

@@ -157,18 +157,59 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
 }
 
 const getAllNews = `-- name: GetAllNews :many
-SELECT id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at from news
+SELECT
+    n.id AS id,
+    n.author,
+    n.title,
+    n.description,
+    n.content,
+    n.url,
+    n.image_url,
+    n.publish_at,
+    n.created_at AS created_at,
+    n.updated_at AS updated_at,
+    n.deleted_at AS deleted_at,
+    json_agg(hc.category_id::uuid) AS category_ids
+FROM news n
+    Left JOIN has_categories hc ON n.id = hc.news_id
+GROUP BY
+    n.id,
+    n.author,
+    n.title,
+    n.description,
+    n.content,
+    n.url,
+    n.image_url,
+    n.publish_at,
+    n.created_at,
+    n.updated_at,
+    n.deleted_at
 `
 
-func (q *Queries) GetAllNews(ctx context.Context) ([]News, error) {
+type GetAllNewsRow struct {
+	ID          pgtype.UUID
+	Author      pgtype.Text
+	Title       pgtype.Text
+	Description pgtype.Text
+	Content     pgtype.Text
+	Url         pgtype.Text
+	ImageUrl    pgtype.Text
+	PublishAt   pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	DeletedAt   pgtype.Timestamp
+	CategoryIds []byte
+}
+
+func (q *Queries) GetAllNews(ctx context.Context) ([]GetAllNewsRow, error) {
 	rows, err := q.db.Query(ctx, getAllNews)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []News
+	var items []GetAllNewsRow
 	for rows.Next() {
-		var i News
+		var i GetAllNewsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Author,
@@ -181,6 +222,7 @@ func (q *Queries) GetAllNews(ctx context.Context) ([]News, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.CategoryIds,
 		); err != nil {
 			return nil, err
 		}
@@ -260,12 +302,55 @@ func (q *Queries) GetLike(ctx context.Context, arg GetLikeParams) (Like, error) 
 }
 
 const getNews = `-- name: GetNews :one
-select id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at from news where id = $1
+SELECT
+    n.id AS id,
+    n.author,
+    n.title,
+    n.description,
+    n.content,
+    n.url,
+    n.image_url,
+    n.publish_at,
+    n.created_at AS created_at,
+    n.updated_at AS updated_at,
+    n.deleted_at AS deleted_at,
+    json_agg(hc.category_id::uuid) AS category_ids
+FROM news n
+    Left JOIN has_categories hc ON n.id = hc.news_id
+where
+    id = $1
+GROUP BY
+    n.id,
+    n.author,
+    n.title,
+    n.description,
+    n.content,
+    n.url,
+    n.image_url,
+    n.publish_at,
+    n.created_at,
+    n.updated_at,
+    n.deleted_at
 `
 
-func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (News, error) {
+type GetNewsRow struct {
+	ID          pgtype.UUID
+	Author      pgtype.Text
+	Title       pgtype.Text
+	Description pgtype.Text
+	Content     pgtype.Text
+	Url         pgtype.Text
+	ImageUrl    pgtype.Text
+	PublishAt   pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	DeletedAt   pgtype.Timestamp
+	CategoryIds []byte
+}
+
+func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (GetNewsRow, error) {
 	row := q.db.QueryRow(ctx, getNews, id)
-	var i News
+	var i GetNewsRow
 	err := row.Scan(
 		&i.ID,
 		&i.Author,
@@ -278,6 +363,7 @@ func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (News, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.CategoryIds,
 	)
 	return i, err
 }

@@ -70,5 +70,6 @@ func (g *NewsService) Update(news *inport.UpdateNewsPayload) error {
 		Url:         news.URL,
 		ImageUrl:    news.ImageURL,
 		PublishAt:   news.PublishAt,
+		Categories:  news.Categories,
 	})
 }

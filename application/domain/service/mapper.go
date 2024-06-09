@@ -2,6 +2,7 @@ package service
 
 import (
 	inport "news-api/application/port/in"
+	outport "news-api/application/port/out"
 	"news-api/internal/db"
 	"time"
 
@@ -22,7 +23,7 @@ func MapUser(user db.User) *inport.User {
 		DeletedAt: PGTimestampToTime(user.DeletedAt),
 	}
 }
-func MapNews(news db.News) *inport.News {
+func MapNews(news outport.NewsWithCategory) *inport.News {
 	return &inport.News{
 		ID:          ToUUID(news.ID).String(),
 		Author:      news.Author.String,
@@ -32,9 +33,19 @@ func MapNews(news db.News) *inport.News {
 		URL:         news.Url.String,
 		ImageURL:    news.ImageUrl.String,
 		PublishAt:   news.PublishAt.Time,
-		CreatedAt:   PGTimestampToTime(news.CreatedAt),
-		UpdatedAt:   PGTimestampToTime(news.UpdatedAt),
-		DeletedAt:   PGTimestampToTime(news.DeletedAt),
+		Categories: func() []uuid.UUID {
+			if len(news.Categories) == 0 {
+				return nil
+			}
+			ids := make([]uuid.UUID, len(news.Categories))
+			for i, v := range news.Categories {
+				ids[i] = v.Bytes
+			}
+			return ids
+		}(),
+		CreatedAt: PGTimestampToTime(news.CreatedAt),
+		UpdatedAt: PGTimestampToTime(news.UpdatedAt),
+		DeletedAt: PGTimestampToTime(news.DeletedAt),
 	}
 }
 

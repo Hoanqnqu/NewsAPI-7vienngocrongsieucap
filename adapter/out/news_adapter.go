@@ -2,9 +2,11 @@ package outAdapter
 
 import (
 	"context"
-	"github.com/google/uuid"
+	"encoding/json"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
+
+	"github.com/google/uuid"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -18,10 +20,30 @@ func NewNewsAdapter(pool *pgxpool.Pool) *NewsAdapter {
 	return &NewsAdapter{pool: pool}
 }
 
-func (u *NewsAdapter) GetAll() ([]db.News, error) {
+func (u *NewsAdapter) GetAll() ([]outport.NewsWithCategory, error) {
 	query := db.New(u.pool)
-
-	return query.GetAllNews(context.Background())
+	news, err := query.GetAllNews(context.Background())
+	sl := make([]outport.NewsWithCategory, len(news))
+	if err != nil {
+		return nil, err
+	}
+	var category_ids []pgtype.UUID
+	for i, v := range news {
+		sl[i].Author = v.Author
+		sl[i].Content = v.Content
+		sl[i].Description = v.Description
+		sl[i].Title = v.Title
+		sl[i].Url = v.Url
+		sl[i].ImageUrl = v.ImageUrl
+		sl[i].PublishAt = v.PublishAt
+		sl[i].ID = v.ID
+		err = json.Unmarshal(v.CategoryIds, &category_ids)
+		if err != nil {
+			return nil, err
+		}
+		sl[i].Categories = category_ids
+	}
+	return sl, nil
 }
 
 func (u *NewsAdapter) Insert(news outport.News) error {
@@ -117,10 +139,27 @@ func (u *NewsAdapter) Update(news outport.News) error {
 			Valid: true,
 		},
 	})
+	if err != nil {
+		for _, v := range news.Categories {
+			err = query.InsertHasCategory(context.Background(), db.InsertHasCategoryParams{
+				NewsID: pgtype.UUID{
+					Bytes: news.ID,
+					Valid: true,
+				},
+				CategoryID: pgtype.UUID{
+					Bytes: v,
+					Valid: true,
+				},
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return err
 }
 
-func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *db.News, isLiked bool, isDisliked bool, err error) {
+func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.NewsWithCategory, isLiked bool, isDisliked bool, err error) {
 	query := db.New(u.pool)
 	_news, err := query.GetNews(context.Background(), pgtype.UUID{
 		Bytes: uuid.MustParse(newsID),
@@ -129,7 +168,23 @@ func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *db.News, 
 	if err != nil {
 		return nil, false, false, err
 	}
-	news = &_news
+	var category_ids []pgtype.UUID
+
+	news.Author = _news.Author
+	news.Content = _news.Content
+	news.Description = _news.Description
+	news.Title = _news.Title
+	news.Url = _news.Url
+	news.ImageUrl = _news.ImageUrl
+	news.PublishAt = _news.PublishAt
+	news.ID = _news.ID
+
+	err = json.Unmarshal(_news.CategoryIds, &category_ids)
+	if err != nil {
+		return nil, false, false, err
+	}
+	news.Categories = category_ids
+
 	_, err = query.GetLike(context.Background(), db.GetLikeParams{
 		NewsID: pgtype.UUID{
 			Bytes: uuid.MustParse(newsID),

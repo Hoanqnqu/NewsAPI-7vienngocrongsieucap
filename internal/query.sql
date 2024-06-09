@@ -93,7 +93,33 @@ WHERE
 UPDATE news SET deleted_at = NOW() WHERE id = $1;
 
 -- name: GetAllNews :many
-SELECT * from news;
+SELECT
+    n.id AS id,
+    n.author,
+    n.title,
+    n.description,
+    n.content,
+    n.url,
+    n.image_url,
+    n.publish_at,
+    n.created_at AS created_at,
+    n.updated_at AS updated_at,
+    n.deleted_at AS deleted_at,
+    json_agg(hc.category_id::uuid) AS category_ids
+FROM news n
+    Left JOIN has_categories hc ON n.id = hc.news_id
+GROUP BY
+    n.id,
+    n.author,
+    n.title,
+    n.description,
+    n.content,
+    n.url,
+    n.image_url,
+    n.publish_at,
+    n.created_at,
+    n.updated_at,
+    n.deleted_at;
 
 -- name: InsertLike :exec
 INSERT INTO likes (news_id, user_id) VALUES ($1, $2);
@@ -126,4 +152,32 @@ SELECT * from likes Where news_id = $1 and user_id = $2;
 SELECT * from dislikes Where news_id = $1 and user_id = $2;
 
 -- name: GetNews :one
-select * from news where id = $1;
+SELECT
+    n.id AS id,
+    n.author,
+    n.title,
+    n.description,
+    n.content,
+    n.url,
+    n.image_url,
+    n.publish_at,
+    n.created_at AS created_at,
+    n.updated_at AS updated_at,
+    n.deleted_at AS deleted_at,
+    json_agg(hc.category_id::uuid) AS category_ids
+FROM news n
+    Left JOIN has_categories hc ON n.id = hc.news_id
+where
+    id = $1
+GROUP BY
+    n.id,
+    n.author,
+    n.title,
+    n.description,
+    n.content,
+    n.url,
+    n.image_url,
+    n.publish_at,
+    n.created_at,
+    n.updated_at,
+    n.deleted_at;

@@ -56,7 +56,6 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 		userRouter.Post("/save/{newsId}", userHandlers.Save)
 		userRouter.Get("/saved", userHandlers.GetSavedNews)
 		userRouter.Get("/news/{newsId}", newsHandlers.GetNewsByID)
-
 	})
 
 	return router

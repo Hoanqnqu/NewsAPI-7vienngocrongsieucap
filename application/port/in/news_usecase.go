@@ -7,19 +7,20 @@ import (
 )
 
 type News struct {
-	ID          string     `json:"id"`
-	Author      string     `json:"author"`
-	Title       string     `json:"title"`
-	Content     string     `json:"content"`
-	Description string     `json:"description"`
-	URL         string     `json:"url"`
-	ImageURL    string     `json:"image_url"`
-	PublishAt   time.Time  `json:"publish_at"`
-	CreatedAt   *time.Time `json:"created_at"`
-	UpdatedAt   *time.Time `json:"updated_at"`
-	DeletedAt   *time.Time `json:"deleted_at"`
-	IsLiked     bool       `json:"isLiked"`
-	IsDisliked  bool       `json:"isDisliked"`
+	ID          string      `json:"id"`
+	Author      string      `json:"author"`
+	Title       string      `json:"title"`
+	Content     string      `json:"content"`
+	Description string      `json:"description"`
+	URL         string      `json:"url"`
+	ImageURL    string      `json:"image_url"`
+	PublishAt   time.Time   `json:"publish_at"`
+	Categories  []uuid.UUID `json:"categories"`
+	CreatedAt   *time.Time  `json:"created_at"`
+	UpdatedAt   *time.Time  `json:"updated_at"`
+	DeletedAt   *time.Time  `json:"deleted_at"`
+	IsLiked     bool        `json:"isLiked"`
+	IsDisliked  bool        `json:"isDisliked"`
 }
 type CreateNewsPayload struct {
 	Author      string      `json:"author"`
@@ -33,14 +34,15 @@ type CreateNewsPayload struct {
 }
 
 type UpdateNewsPayload struct {
-	ID          uuid.UUID `json:"id"`
-	Author      string    `json:"author"`
-	Title       string    `json:"title"`
-	Content     string    `json:"content"`
-	Description string    `json:"description"`
-	URL         string    `json:"url"`
-	ImageURL    string    `json:"image_url"`
-	PublishAt   time.Time `json:"publish_at"`
+	ID          uuid.UUID   `json:"id"`
+	Author      string      `json:"author"`
+	Title       string      `json:"title"`
+	Content     string      `json:"content"`
+	Description string      `json:"description"`
+	URL         string      `json:"url"`
+	ImageURL    string      `json:"image_url"`
+	PublishAt   time.Time   `json:"publish_at"`
+	Categories  []uuid.UUID `json:"categories"`
 }
 
 type NewsUseCase interface {
