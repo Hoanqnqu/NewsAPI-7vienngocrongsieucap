@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryHandlers *CategoryHandlers, newsHandlers *NewsHandlers) *chi.Mux {
+func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryHandlers *CategoryHandlers, newsHandlers *NewsHandlers, s3Handler *UploadHandlers) *chi.Mux {
 	router := chi.NewRouter()
 	// for more ideas, see: https://developer.github.com/v3/#cross-origin-resource-sharing
 	router.Use(cors.Handler(cors.Options{
@@ -26,6 +26,7 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
+	router.Post("/image/upload", s3Handler.Upload)
 	router.Get("/news", newsHandlers.GetAll)
 	router.Post("/login", userHandlers.Login)
 	router.Get("/news/{newsId}", newsHandlers.GetNewsByID)

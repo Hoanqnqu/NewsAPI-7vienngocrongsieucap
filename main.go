@@ -3,20 +3,25 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/zhenghaoz/gorse/client"
 	"log"
 	"net/http"
 	"news-api/adapter/in/rest"
 	outAdapter "news-api/adapter/out"
 	"news-api/application/domain/service"
+	"os"
+	"github.com/joho/godotenv"
+	"github.com/zhenghaoz/gorse/client"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+	  log.Fatal("Error loading .env file")
+	}
 	ctx := context.Background()
-	//connectionString := "postgres://koyeb-adm:D0ZGrelqfRI6@ep-empty-meadow-a15erppx.ap-southeast-1.pg.koyeb.app/koyebdb"
-	connectionString := fmt.Sprintf(																					
+	connectionString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
 		"postgres",
 		"password",
@@ -34,13 +39,19 @@ func main() {
 		log.Fatalln("Can not connect to sql")
 	}
 	defer pool.Close()
+	fmt.Println(os.Getenv("AWS_ACCESS_KEY"))
 	//init adapter
+	s3Adapter := outAdapter.NewS3Adapter(os.Getenv("AWS_ACCESS_KEY"),
+		os.Getenv("AWS_SECRET_KEY"),
+		os.Getenv("AWS_BUCKET_REGION"),
+		os.Getenv("AWS_BUCKET_NAME"))
 	dummyAdapter := outAdapter.NewDummyAdapter(pool)
 	userAdapter := outAdapter.NewUserAdapter(pool)
 	categoryAdapter := outAdapter.NewCategoryAdapter(pool)
 	newsAdapter := outAdapter.NewNewsAdapter(pool)
 	gorseAdaper := outAdapter.NewGorseAdapter(gorse)
 	//init Use case
+	s3UseCase := service.NewUploadService(s3Adapter)
 	dummyUseCase := service.NewDummyService(dummyAdapter)
 	userUseCase := service.NewUsersService(userAdapter)
 	categoryUseCase := service.NewCategoriesService(categoryAdapter)
@@ -51,7 +62,8 @@ func main() {
 	userHandler := rest.NewUserHandlers(userUseCase, recommendUseCase)
 	categoryHandler := rest.NewCategoryHandlers(categoryUseCase)
 	newsHandler := rest.NewNewsHandlers(newsUseCase)
+	s3Handler := rest.NewUploadHandlers(s3UseCase)
 
-	router := rest.AppRouter(dummyHandler, userHandler, categoryHandler, newsHandler)
+	router := rest.AppRouter(dummyHandler, userHandler, categoryHandler, newsHandler, s3Handler)
 	http.ListenAndServe(":3000", router)
 }

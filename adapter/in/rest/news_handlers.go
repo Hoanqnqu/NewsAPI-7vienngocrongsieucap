@@ -28,6 +28,7 @@ func (u *NewsHandlers) GetAll(response http.ResponseWriter, request *http.Reques
 			StatusCode: 500,
 			Message:    "Unknown err",
 		})
+		return
 	}
 	json.NewEncoder(response).Encode(APIResponse[[]*inport.News]{
 		StatusCode: 200,
@@ -109,7 +110,6 @@ func (u *NewsHandlers) GetNewsByID(response http.ResponseWriter, request *http.R
 		fmt.Println(err)
 		if err == nil {
 			userId = claim["ID"].(string)
-			fmt.Println("-------------id:" + userId)
 		}
 	}
 
