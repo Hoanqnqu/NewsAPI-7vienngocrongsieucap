@@ -19,14 +19,28 @@ func NewCategoryHandlers(categoryUseCase inport.CategoriesUseCase) *CategoryHand
 
 func (u *CategoryHandlers) GetAll(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
-	categoriesList, err := u.categoryUseCase.GetAll()
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(response).Encode(APIResponse[any]{
-			StatusCode: 500,
-			Message:    "Unknown err",
-		})
+	var categoriesList []*inport.Category
+	var err error
+	keywords := request.URL.Query()["keyword"]
+	if len(keywords) == 1 {
+		categoriesList, err = u.categoryUseCase.Search(keywords[0])
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
 
+		}
+	} else {
+		categoriesList, err = u.categoryUseCase.GetAll()
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
+		}
 	}
 	json.NewEncoder(response).Encode(APIResponse[[]*inport.Category]{
 		StatusCode: 200,

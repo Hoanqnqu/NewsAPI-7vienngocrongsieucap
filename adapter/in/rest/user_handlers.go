@@ -40,14 +40,28 @@ func (u *UserHandlers) GetSavedNews(response http.ResponseWriter, request *http.
 }
 func (u *UserHandlers) GetAll(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
-	usersList, err := u.userUseCase.GetAll()
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(response).Encode(APIResponse[any]{
-			StatusCode: 500,
-			Message:    "Unknown err",
-		})
+	var usersList []*inport.User
+	var err error
+	keywords := request.URL.Query()["keyword"]
+	if len(keywords) == 1 {
+		usersList, err = u.userUseCase.Search(keywords[0])
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
 
+		}
+	} else {
+		usersList, err = u.userUseCase.GetAll()
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
+		}
 	}
 	json.NewEncoder(response).Encode(APIResponse[[]*inport.User]{
 		StatusCode: 200,

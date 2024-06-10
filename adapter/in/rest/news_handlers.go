@@ -21,15 +21,31 @@ func NewNewsHandlers(newsUseCase inport.NewsUseCase) *NewsHandlers {
 
 func (u *NewsHandlers) GetAll(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
-	newsList, err := u.newsUseCase.GetAll()
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(response).Encode(APIResponse[any]{
-			StatusCode: 500,
-			Message:    "Unknown err",
-		})
-		return
+	var newsList []*inport.News
+	var err error
+	keywords := request.URL.Query()["keyword"]
+	if len(keywords) == 1 {
+		newsList, err = u.newsUseCase.SearchNews(keywords[0])
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
+			return
+		}
+	} else {
+		newsList, err = u.newsUseCase.GetAll()
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
+			return
+		}
 	}
+
 	json.NewEncoder(response).Encode(APIResponse[[]*inport.News]{
 		StatusCode: 200,
 		Message:    "Ok",

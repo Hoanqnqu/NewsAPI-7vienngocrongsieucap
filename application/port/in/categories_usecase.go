@@ -27,4 +27,5 @@ type CategoriesUseCase interface {
 	GetAll() ([]*Category, error)
 	Insert(category *CreateCategoryPayload) error
 	Update(category *UpdateCategoryPayload) error
+	Search(keyword string) ([]*Category, error)
 }

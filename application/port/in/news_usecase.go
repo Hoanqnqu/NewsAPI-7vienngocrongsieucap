@@ -50,4 +50,5 @@ type NewsUseCase interface {
 	Insert(news *CreateNewsPayload) error
 	Update(news *UpdateNewsPayload) error
 	GetNewsByID(newsID, userID string) (*News, error)
+	SearchNews(keyword string) ([]*News, error)
 }

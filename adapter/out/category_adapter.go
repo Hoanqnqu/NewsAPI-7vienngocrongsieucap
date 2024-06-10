@@ -40,6 +40,14 @@ func (u *CategoryAdapter) Insert(category outport.Category) error {
 	return err
 }
 
+func (u *CategoryAdapter) Search(keyword string) ([]db.Category, error) {
+	query := db.New(u.pool)
+	return query.SearchCategories(context.Background(), pgtype.Text{
+		String: keyword,
+		Valid:  true,
+	})
+}
+
 func (u *CategoryAdapter) Update(category outport.Category) error {
 	query := db.New(u.pool)
 

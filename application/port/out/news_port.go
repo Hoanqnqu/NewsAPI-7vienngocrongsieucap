@@ -38,4 +38,5 @@ type NewsPort interface {
 	Insert(news News) error
 	Update(news News) error
 	GetNewsByID(newsID, userID string) (*NewsWithCategory, bool, bool, error)
+	SearchNews(keyword string) ([]NewsWithCategory, error)
 }

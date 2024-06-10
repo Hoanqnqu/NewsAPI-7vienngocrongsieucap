@@ -29,6 +29,20 @@ func (g *CategoriesService) GetAll() ([]*inport.Category, error) {
 	}(), nil
 }
 
+func (g *CategoriesService) Search(keyword string) ([]*inport.Category, error) {
+	categoriesList, err := g.categoriesPort.Search(keyword)
+	if err != nil {
+		return nil, err
+	}
+	return func() []*inport.Category {
+		result := make([]*inport.Category, len(categoriesList))
+		for i, v := range categoriesList {
+			result[i] = MapCategory(v)
+		}
+		return result
+	}(), nil
+}
+
 func (g *CategoriesService) Insert(category *inport.CreateCategoryPayload) error {
 
 	return g.categoriesPort.Insert(outport.Category{

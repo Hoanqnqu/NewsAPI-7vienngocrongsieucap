@@ -1,161 +1,219 @@
 -- name: InsertUser :exec
-INSERT INTO
-    users (
-        id,
-        auth_id,
-        email,
-        name,
-        role,
-        image_url,
-        created_at
-    )
+INSERT INTO users (id,
+                   auth_id,
+                   email,
+                   name,
+                   role,
+                   image_url,
+                   created_at)
 VALUES ($1, $2, $3, $4, $5, $6, NOW());
 
 -- name: GetAdmin :many
 SELECT *
 FROM users
-WHERE
-    users.email = $1
-    AND users.password = $2
-    AND users.role = 'admin'
-LIMIT 1;
+WHERE users.email = $1
+  AND users.password = $2
+  AND users.role = 'admin' LIMIT 1;
 
 -- name: GetAllUsers :many
-SELECT * from users;
+SELECT *
+from users;
 
 -- name: GetUserByAuthID :one
-SELECT * FROM users WHERE users.auth_id = $1 LIMIT 1;
+SELECT *
+FROM users
+WHERE users.auth_id = $1 LIMIT 1;
 -- name: UpdateUser :exec
 UPDATE users
-SET
-    name = $1,
-    image_url = $2,
+SET name       = $1,
+    image_url  = $2,
     updated_at = NOW()
-WHERE
-    id = $3;
+WHERE id = $3;
 -- name: DeleteUser :exec
-UPDATE users SET deleted_at = NOW() WHERE id = $1;
+UPDATE users
+SET deleted_at = NOW()
+WHERE id = $1;
 
 -- name: InsertCategory :exec
-INSERT INTO categories (id, name, created_at) VALUES ($1, $2, NOW());
+INSERT INTO categories (id, name, created_at)
+VALUES ($1, $2, NOW());
 -- name: UpdateCategory :exec
 UPDATE categories
-SET
-    name = $1,
+SET name       = $1,
     updated_at = NOW()
-WHERE
-    id = $2;
+WHERE id = $2;
 -- name: DeleteCategory :exec
-UPDATE categories SET deleted_at = NOW() WHERE id = $1;
+UPDATE categories
+SET deleted_at = NOW()
+WHERE id = $1;
 
 -- name: GetAllCategories :many
-SELECT * from categories;
+SELECT *
+from categories;
 
 -- name: InsertNews :exec
-INSERT INTO news (id,author,title,description,content,url,image_url,publish_at,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW());
+INSERT INTO news (id, author, title, description, content, url, image_url, publish_at, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW());
 
 -- name: UpdateNews :exec
 UPDATE news
-SET
-    title = $1,
+SET title       = $1,
     description = $2,
-    content = $3,
-    author = $4,
-    url = $5,
-    image_url = $6,
-    publish_at = $7,
-    updated_at = NOW()
-WHERE
-    id = $8;
+    content     = $3,
+    author      = $4,
+    url         = $5,
+    image_url   = $6,
+    publish_at  = $7,
+    updated_at  = NOW()
+WHERE id = $8;
 -- name: DeleteNews :exec
-UPDATE news SET deleted_at = NOW() WHERE id = $1;
+UPDATE news
+SET deleted_at = NOW()
+WHERE id = $1;
 
 -- name: GetAllNews :many
-SELECT
-    n.id AS id,
-    n.author,
-    n.title,
-    n.description,
-    n.content,
-    n.url,
-    n.image_url,
-    n.publish_at,
-    n.created_at AS created_at,
-    n.updated_at AS updated_at,
-    n.deleted_at AS deleted_at,
-    json_agg(hc.category_id::uuid) AS category_ids
+SELECT n.id                           AS id,
+       n.author,
+       n.title,
+       n.description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                   AS created_at,
+       n.updated_at                   AS updated_at,
+       n.deleted_at                   AS deleted_at,
+       json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
-    Left JOIN has_categories hc ON n.id = hc.news_id
-GROUP BY
-    n.id,
-    n.author,
-    n.title,
-    n.description,
-    n.content,
-    n.url,
-    n.image_url,
-    n.publish_at,
-    n.created_at,
-    n.updated_at,
-    n.deleted_at;
+         Left JOIN has_categories hc ON n.id = hc.news_id
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at;
 
 -- name: InsertLike :exec
-INSERT INTO likes (news_id, user_id) VALUES ($1, $2);
+INSERT INTO likes (news_id, user_id)
+VALUES ($1, $2);
 
 -- name: DeleteLike :exec
-DELETE from likes Where news_id = $1 and user_id = $2;
+DELETE
+from likes
+Where news_id = $1
+  and user_id = $2;
 
 -- name: InsertDisLike :exec
-INSERT INTO dislikes (news_id, user_id) VALUES ($1, $2);
+INSERT INTO dislikes (news_id, user_id)
+VALUES ($1, $2);
 
 -- name: DeleteDisLike :exec
-DELETE from dislikes Where news_id = $1 and user_id = $2;
+DELETE
+from dislikes
+Where news_id = $1
+  and user_id = $2;
 
 -- name: InsertHasCategory :exec
-INSERT INTO has_categories (news_id, category_id) VALUES ($1, $2);
+INSERT INTO has_categories (news_id, category_id)
+VALUES ($1, $2);
 
 -- name: InsertSave :exec
-Insert into saves (news_id, user_id) values ($1, $2);
+Insert into saves (news_id, user_id)
+values ($1, $2);
 
 -- name: DeleteSave :exec
-DELETE from saves Where news_id = $1 and user_id = $2;
+DELETE
+from saves
+Where news_id = $1
+  and user_id = $2;
 
 -- name: GetSaves :many
-SELECT news_id from saves Where user_id = $1;
+SELECT news_id
+from saves
+Where user_id = $1;
 
 -- name: GetLike :one
-SELECT * from likes Where news_id = $1 and user_id = $2;
+SELECT *
+from likes
+Where news_id = $1
+  and user_id = $2;
 
 -- name: GetDislike :one
-SELECT * from dislikes Where news_id = $1 and user_id = $2;
+SELECT *
+from dislikes
+Where news_id = $1
+  and user_id = $2;
 
 -- name: GetNews :one
-SELECT
-    n.id AS id,
-    n.author,
-    n.title,
-    n.description,
-    n.content,
-    n.url,
-    n.image_url,
-    n.publish_at,
-    n.created_at AS created_at,
-    n.updated_at AS updated_at,
-    n.deleted_at AS deleted_at,
-    json_agg(hc.category_id::uuid) AS category_ids
+SELECT n.id                           AS id,
+       n.author,
+       n.title,
+       n.description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                   AS created_at,
+       n.updated_at                   AS updated_at,
+       n.deleted_at                   AS deleted_at,
+       json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
-    Left JOIN has_categories hc ON n.id = hc.news_id
-where
-    id = $1
-GROUP BY
-    n.id,
-    n.author,
-    n.title,
-    n.description,
-    n.content,
-    n.url,
-    n.image_url,
-    n.publish_at,
-    n.created_at,
-    n.updated_at,
-    n.deleted_at;
+         Left JOIN has_categories hc ON n.id = hc.news_id
+where id = $1
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at;
+
+-- name: DeleteHasCategory :exec
+DELETE
+from has_categories
+where news_id = $1;
+
+-- name: SearchNews :many
+SELECT n.id                           AS id,
+       n.author                       AS author,
+       n.title                        AS title,
+       n.description                  AS description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                   AS created_at,
+       n.updated_at                   AS updated_at,
+       n.deleted_at                   AS deleted_at,
+       json_agg(hc.category_id::uuid) AS category_ids
+FROM news n
+         Left JOIN has_categories hc ON n.id = hc.news_id
+WHERE author LIKE '%' || $1 || '%'
+   OR description LIKE '%' || $1 || '%'
+   OR title LIKE '%' || $1 || '%'
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at;
+
+-- name: SearchUsers :many
+Select * from users where email LIKE '%' || $1 || '%' or name LIKE '%' || $1 || '%';
+
+-- name: SearchCategories :many
+Select * from Categories where name LIKE '%' || $1 || '%';

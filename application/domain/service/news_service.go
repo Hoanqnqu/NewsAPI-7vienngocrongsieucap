@@ -43,7 +43,7 @@ func (g *NewsService) Insert(news *inport.CreateNewsPayload) error {
 		PublishAt:   news.PublishAt,
 		Categories:  news.Categories,
 	})
-	
+
 	if err == nil {
 		return g.recommendationSystem.InsertNews(context.Background(), id, news.Categories)
 	}
@@ -62,7 +62,7 @@ func (g *NewsService) GetNewsByID(newsID, userID string) (*inport.News, error) {
 }
 
 func (g *NewsService) Update(news *inport.UpdateNewsPayload) error {
-	return g.newsPort.Update(outport.News{
+	err := g.newsPort.Update(outport.News{
 		ID:          news.ID,
 		Title:       news.Title,
 		Content:     news.Content,
@@ -73,4 +73,22 @@ func (g *NewsService) Update(news *inport.UpdateNewsPayload) error {
 		PublishAt:   news.PublishAt,
 		Categories:  news.Categories,
 	})
+	if err == nil {
+		return g.recommendationSystem.InsertNews(context.Background(), news.ID, news.Categories)
+	}
+	return err
+}
+
+func (g *NewsService) SearchNews(keyword string) ([]*inport.News, error) {
+	newsList, err := g.newsPort.SearchNews(keyword)
+	if err != nil {
+		return nil, err
+	}
+	return func() ([]*inport.News, error) {
+		result := make([]*inport.News, len(newsList))
+		for i, v := range newsList {
+			result[i] = MapNews(v)
+		}
+		return result, nil
+	}()
 }

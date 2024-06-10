@@ -230,3 +230,12 @@ func (u *UserAdapter) GetSavedNews(userID string) ([]uuid.UUID, error) {
 	return rs, nil
 
 }
+
+func (u *UserAdapter) Search(keyword string) ([]db.User, error) {
+	query := db.New(u.pool)
+
+	return query.SearchUsers(context.Background(), pgtype.Text{
+		String: keyword,
+		Valid:  true,
+	})
+}

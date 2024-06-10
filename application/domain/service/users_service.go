@@ -106,3 +106,17 @@ func (g *UsersService) Save(like *inport.Like) error {
 func (g *UsersService) GetSavedNews(userID string) ([]uuid.UUID, error) {
 	return g.usersPort.GetSavedNews(userID)
 }
+
+func (g *UsersService) Search(keyword string) ([]*inport.User, error) {
+	usersList, err := g.usersPort.Search(keyword)
+	if err != nil {
+		return nil, err
+	}
+	return func() []*inport.User {
+		result := make([]*inport.User, len(usersList))
+		for i, v := range usersList {
+			result[i] = MapUser(v)
+		}
+		return result
+	}(), nil
+}

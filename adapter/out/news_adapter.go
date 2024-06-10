@@ -3,14 +3,12 @@ package outAdapter
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
 	"github.com/google/uuid"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -30,7 +28,7 @@ func (u *NewsAdapter) GetAll() ([]outport.NewsWithCategory, error) {
 	if err != nil {
 		return nil, err
 	}
-	var category_ids []pgtype.UUID
+	var categoryIds []pgtype.UUID
 	for i, v := range news {
 		sl[i].Author = v.Author
 		sl[i].Content = v.Content
@@ -40,11 +38,40 @@ func (u *NewsAdapter) GetAll() ([]outport.NewsWithCategory, error) {
 		sl[i].ImageUrl = v.ImageUrl
 		sl[i].PublishAt = v.PublishAt
 		sl[i].ID = v.ID
-		err = json.Unmarshal(v.CategoryIds, &category_ids)
+		err = json.Unmarshal(v.CategoryIds, &categoryIds)
 		if err != nil {
 			return nil, err
 		}
-		sl[i].Categories = category_ids
+		sl[i].Categories = categoryIds
+	}
+	return sl, nil
+}
+
+func (u *NewsAdapter) SearchNews(keyword string) ([]outport.NewsWithCategory, error) {
+	query := db.New(u.pool)
+	news, err := query.SearchNews(context.Background(), pgtype.Text{
+		String: keyword,
+		Valid:  true,
+	})
+	sl := make([]outport.NewsWithCategory, len(news))
+	if err != nil {
+		return nil, err
+	}
+	var categoryIds []pgtype.UUID
+	for i, v := range news {
+		sl[i].Author = v.Author
+		sl[i].Content = v.Content
+		sl[i].Description = v.Description
+		sl[i].Title = v.Title
+		sl[i].Url = v.Url
+		sl[i].ImageUrl = v.ImageUrl
+		sl[i].PublishAt = v.PublishAt
+		sl[i].ID = v.ID
+		err = json.Unmarshal(v.CategoryIds, &categoryIds)
+		if err != nil {
+			return nil, err
+		}
+		sl[i].Categories = categoryIds
 	}
 	return sl, nil
 }
@@ -149,28 +176,26 @@ func (u *NewsAdapter) Update(news outport.News) error {
 	})
 	if err == nil {
 		fmt.Println("-------catregory", news.Categories)
-		for _, v := range news.Categories {
-			err = query.InsertHasCategory(context.Background(), db.InsertHasCategoryParams{
-				NewsID: pgtype.UUID{
-					Bytes: news.ID,
-					Valid: true,
-				},
-				CategoryID: pgtype.UUID{
-					Bytes: v,
-					Valid: true,
-				},
-			})
-			var pgError *pgconn.PgError
-			if err != nil {
-				if errors.As(err, &pgError) && pgError.Code != "23505" {
-					return err
-				}
-
+		err = query.DeleteHasCategory(context.Background(), pgtype.UUID{
+			Bytes: news.ID,
+			Valid: true,
+		})
+		if err == nil {
+			for _, v := range news.Categories {
+				err = query.InsertHasCategory(context.Background(), db.InsertHasCategoryParams{
+					NewsID: pgtype.UUID{
+						Bytes: news.ID,
+						Valid: true,
+					},
+					CategoryID: pgtype.UUID{
+						Bytes: v,
+						Valid: true,
+					},
+				})
 			}
-			err = nil
 		}
+
 	}
-	fmt.Println("err")
 	return err
 }
 

@@ -12,7 +12,9 @@ import (
 )
 
 const deleteCategory = `-- name: DeleteCategory :exec
-UPDATE categories SET deleted_at = NOW() WHERE id = $1
+UPDATE categories
+SET deleted_at = NOW()
+WHERE id = $1
 `
 
 func (q *Queries) DeleteCategory(ctx context.Context, id pgtype.UUID) error {
@@ -21,7 +23,10 @@ func (q *Queries) DeleteCategory(ctx context.Context, id pgtype.UUID) error {
 }
 
 const deleteDisLike = `-- name: DeleteDisLike :exec
-DELETE from dislikes Where news_id = $1 and user_id = $2
+DELETE
+from dislikes
+Where news_id = $1
+  and user_id = $2
 `
 
 type DeleteDisLikeParams struct {
@@ -34,8 +39,22 @@ func (q *Queries) DeleteDisLike(ctx context.Context, arg DeleteDisLikeParams) er
 	return err
 }
 
+const deleteHasCategory = `-- name: DeleteHasCategory :exec
+DELETE
+from has_categories
+where news_id = $1
+`
+
+func (q *Queries) DeleteHasCategory(ctx context.Context, newsID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteHasCategory, newsID)
+	return err
+}
+
 const deleteLike = `-- name: DeleteLike :exec
-DELETE from likes Where news_id = $1 and user_id = $2
+DELETE
+from likes
+Where news_id = $1
+  and user_id = $2
 `
 
 type DeleteLikeParams struct {
@@ -49,7 +68,9 @@ func (q *Queries) DeleteLike(ctx context.Context, arg DeleteLikeParams) error {
 }
 
 const deleteNews = `-- name: DeleteNews :exec
-UPDATE news SET deleted_at = NOW() WHERE id = $1
+UPDATE news
+SET deleted_at = NOW()
+WHERE id = $1
 `
 
 func (q *Queries) DeleteNews(ctx context.Context, id pgtype.UUID) error {
@@ -58,7 +79,10 @@ func (q *Queries) DeleteNews(ctx context.Context, id pgtype.UUID) error {
 }
 
 const deleteSave = `-- name: DeleteSave :exec
-DELETE from saves Where news_id = $1 and user_id = $2
+DELETE
+from saves
+Where news_id = $1
+  and user_id = $2
 `
 
 type DeleteSaveParams struct {
@@ -72,7 +96,9 @@ func (q *Queries) DeleteSave(ctx context.Context, arg DeleteSaveParams) error {
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-UPDATE users SET deleted_at = NOW() WHERE id = $1
+UPDATE users
+SET deleted_at = NOW()
+WHERE id = $1
 `
 
 func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
@@ -83,11 +109,9 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 const getAdmin = `-- name: GetAdmin :many
 SELECT id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at
 FROM users
-WHERE
-    users.email = $1
-    AND users.password = $2
-    AND users.role = 'admin'
-LIMIT 1
+WHERE users.email = $1
+  AND users.password = $2
+  AND users.role = 'admin' LIMIT 1
 `
 
 type GetAdminParams struct {
@@ -127,7 +151,8 @@ func (q *Queries) GetAdmin(ctx context.Context, arg GetAdminParams) ([]User, err
 }
 
 const getAllCategories = `-- name: GetAllCategories :many
-SELECT id, name, created_at, updated_at, deleted_at from categories
+SELECT id, name, created_at, updated_at, deleted_at
+from categories
 `
 
 func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
@@ -157,33 +182,31 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
 }
 
 const getAllNews = `-- name: GetAllNews :many
-SELECT
-    n.id AS id,
-    n.author,
-    n.title,
-    n.description,
-    n.content,
-    n.url,
-    n.image_url,
-    n.publish_at,
-    n.created_at AS created_at,
-    n.updated_at AS updated_at,
-    n.deleted_at AS deleted_at,
-    json_agg(hc.category_id::uuid) AS category_ids
+SELECT n.id                           AS id,
+       n.author,
+       n.title,
+       n.description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                   AS created_at,
+       n.updated_at                   AS updated_at,
+       n.deleted_at                   AS deleted_at,
+       json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
-    Left JOIN has_categories hc ON n.id = hc.news_id
-GROUP BY
-    n.id,
-    n.author,
-    n.title,
-    n.description,
-    n.content,
-    n.url,
-    n.image_url,
-    n.publish_at,
-    n.created_at,
-    n.updated_at,
-    n.deleted_at
+         Left JOIN has_categories hc ON n.id = hc.news_id
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at
 `
 
 type GetAllNewsRow struct {
@@ -235,7 +258,8 @@ func (q *Queries) GetAllNews(ctx context.Context) ([]GetAllNewsRow, error) {
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at from users
+SELECT id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at
+from users
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -270,7 +294,10 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 }
 
 const getDislike = `-- name: GetDislike :one
-SELECT news_id, user_id from dislikes Where news_id = $1 and user_id = $2
+SELECT news_id, user_id
+from dislikes
+Where news_id = $1
+  and user_id = $2
 `
 
 type GetDislikeParams struct {
@@ -286,7 +313,10 @@ func (q *Queries) GetDislike(ctx context.Context, arg GetDislikeParams) (Dislike
 }
 
 const getLike = `-- name: GetLike :one
-SELECT news_id, user_id from likes Where news_id = $1 and user_id = $2
+SELECT news_id, user_id
+from likes
+Where news_id = $1
+  and user_id = $2
 `
 
 type GetLikeParams struct {
@@ -302,35 +332,32 @@ func (q *Queries) GetLike(ctx context.Context, arg GetLikeParams) (Like, error) 
 }
 
 const getNews = `-- name: GetNews :one
-SELECT
-    n.id AS id,
-    n.author,
-    n.title,
-    n.description,
-    n.content,
-    n.url,
-    n.image_url,
-    n.publish_at,
-    n.created_at AS created_at,
-    n.updated_at AS updated_at,
-    n.deleted_at AS deleted_at,
-    json_agg(hc.category_id::uuid) AS category_ids
+SELECT n.id                           AS id,
+       n.author,
+       n.title,
+       n.description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                   AS created_at,
+       n.updated_at                   AS updated_at,
+       n.deleted_at                   AS deleted_at,
+       json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
-    Left JOIN has_categories hc ON n.id = hc.news_id
-where
-    id = $1
-GROUP BY
-    n.id,
-    n.author,
-    n.title,
-    n.description,
-    n.content,
-    n.url,
-    n.image_url,
-    n.publish_at,
-    n.created_at,
-    n.updated_at,
-    n.deleted_at
+         Left JOIN has_categories hc ON n.id = hc.news_id
+where id = $1
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at
 `
 
 type GetNewsRow struct {
@@ -369,7 +396,9 @@ func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (GetNewsRow, erro
 }
 
 const getSaves = `-- name: GetSaves :many
-SELECT news_id from saves Where user_id = $1
+SELECT news_id
+from saves
+Where user_id = $1
 `
 
 func (q *Queries) GetSaves(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error) {
@@ -393,7 +422,9 @@ func (q *Queries) GetSaves(ctx context.Context, userID pgtype.UUID) ([]pgtype.UU
 }
 
 const getUserByAuthID = `-- name: GetUserByAuthID :one
-SELECT id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at FROM users WHERE users.auth_id = $1 LIMIT 1
+SELECT id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at
+FROM users
+WHERE users.auth_id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByAuthID(ctx context.Context, authID string) (User, error) {
@@ -415,7 +446,8 @@ func (q *Queries) GetUserByAuthID(ctx context.Context, authID string) (User, err
 }
 
 const insertCategory = `-- name: InsertCategory :exec
-INSERT INTO categories (id, name, created_at) VALUES ($1, $2, NOW())
+INSERT INTO categories (id, name, created_at)
+VALUES ($1, $2, NOW())
 `
 
 type InsertCategoryParams struct {
@@ -429,7 +461,8 @@ func (q *Queries) InsertCategory(ctx context.Context, arg InsertCategoryParams) 
 }
 
 const insertDisLike = `-- name: InsertDisLike :exec
-INSERT INTO dislikes (news_id, user_id) VALUES ($1, $2)
+INSERT INTO dislikes (news_id, user_id)
+VALUES ($1, $2)
 `
 
 type InsertDisLikeParams struct {
@@ -443,7 +476,8 @@ func (q *Queries) InsertDisLike(ctx context.Context, arg InsertDisLikeParams) er
 }
 
 const insertHasCategory = `-- name: InsertHasCategory :exec
-INSERT INTO has_categories (news_id, category_id) VALUES ($1, $2)
+INSERT INTO has_categories (news_id, category_id)
+VALUES ($1, $2)
 `
 
 type InsertHasCategoryParams struct {
@@ -457,7 +491,8 @@ func (q *Queries) InsertHasCategory(ctx context.Context, arg InsertHasCategoryPa
 }
 
 const insertLike = `-- name: InsertLike :exec
-INSERT INTO likes (news_id, user_id) VALUES ($1, $2)
+INSERT INTO likes (news_id, user_id)
+VALUES ($1, $2)
 `
 
 type InsertLikeParams struct {
@@ -471,7 +506,8 @@ func (q *Queries) InsertLike(ctx context.Context, arg InsertLikeParams) error {
 }
 
 const insertNews = `-- name: InsertNews :exec
-INSERT INTO news (id,author,title,description,content,url,image_url,publish_at,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+INSERT INTO news (id, author, title, description, content, url, image_url, publish_at, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
 `
 
 type InsertNewsParams struct {
@@ -500,7 +536,8 @@ func (q *Queries) InsertNews(ctx context.Context, arg InsertNewsParams) error {
 }
 
 const insertSave = `-- name: InsertSave :exec
-Insert into saves (news_id, user_id) values ($1, $2)
+Insert into saves (news_id, user_id)
+values ($1, $2)
 `
 
 type InsertSaveParams struct {
@@ -514,16 +551,13 @@ func (q *Queries) InsertSave(ctx context.Context, arg InsertSaveParams) error {
 }
 
 const insertUser = `-- name: InsertUser :exec
-INSERT INTO
-    users (
-        id,
-        auth_id,
-        email,
-        name,
-        role,
-        image_url,
-        created_at
-    )
+INSERT INTO users (id,
+                   auth_id,
+                   email,
+                   name,
+                   role,
+                   image_url,
+                   created_at)
 VALUES ($1, $2, $3, $4, $5, $6, NOW())
 `
 
@@ -548,13 +582,155 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 	return err
 }
 
+const searchCategories = `-- name: SearchCategories :many
+Select id, name, created_at, updated_at, deleted_at from Categories where name LIKE '%' || $1 || '%'
+`
+
+func (q *Queries) SearchCategories(ctx context.Context, dollar_1 pgtype.Text) ([]Category, error) {
+	rows, err := q.db.Query(ctx, searchCategories, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Category
+	for rows.Next() {
+		var i Category
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchNews = `-- name: SearchNews :many
+SELECT n.id                           AS id,
+       n.author                       AS author,
+       n.title                        AS title,
+       n.description                  AS description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                   AS created_at,
+       n.updated_at                   AS updated_at,
+       n.deleted_at                   AS deleted_at,
+       json_agg(hc.category_id::uuid) AS category_ids
+FROM news n
+         Left JOIN has_categories hc ON n.id = hc.news_id
+WHERE author LIKE '%' || $1 || '%'
+   OR description LIKE '%' || $1 || '%'
+   OR title LIKE '%' || $1 || '%'
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at
+`
+
+type SearchNewsRow struct {
+	ID          pgtype.UUID
+	Author      pgtype.Text
+	Title       pgtype.Text
+	Description pgtype.Text
+	Content     pgtype.Text
+	Url         pgtype.Text
+	ImageUrl    pgtype.Text
+	PublishAt   pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	DeletedAt   pgtype.Timestamp
+	CategoryIds []byte
+}
+
+func (q *Queries) SearchNews(ctx context.Context, dollar_1 pgtype.Text) ([]SearchNewsRow, error) {
+	rows, err := q.db.Query(ctx, searchNews, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchNewsRow
+	for rows.Next() {
+		var i SearchNewsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Author,
+			&i.Title,
+			&i.Description,
+			&i.Content,
+			&i.Url,
+			&i.ImageUrl,
+			&i.PublishAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.CategoryIds,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchUsers = `-- name: SearchUsers :many
+Select id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at from users where email LIKE '%' || $1 || '%' or name LIKE '%' || $1 || '%'
+`
+
+func (q *Queries) SearchUsers(ctx context.Context, dollar_1 pgtype.Text) ([]User, error) {
+	rows, err := q.db.Query(ctx, searchUsers, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.AuthID,
+			&i.Email,
+			&i.Password,
+			&i.Name,
+			&i.Role,
+			&i.ImageUrl,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateCategory = `-- name: UpdateCategory :exec
 UPDATE categories
-SET
-    name = $1,
+SET name       = $1,
     updated_at = NOW()
-WHERE
-    id = $2
+WHERE id = $2
 `
 
 type UpdateCategoryParams struct {
@@ -569,17 +745,15 @@ func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) 
 
 const updateNews = `-- name: UpdateNews :exec
 UPDATE news
-SET
-    title = $1,
+SET title       = $1,
     description = $2,
-    content = $3,
-    author = $4,
-    url = $5,
-    image_url = $6,
-    publish_at = $7,
-    updated_at = NOW()
-WHERE
-    id = $8
+    content     = $3,
+    author      = $4,
+    url         = $5,
+    image_url   = $6,
+    publish_at  = $7,
+    updated_at  = NOW()
+WHERE id = $8
 `
 
 type UpdateNewsParams struct {
@@ -609,12 +783,10 @@ func (q *Queries) UpdateNews(ctx context.Context, arg UpdateNewsParams) error {
 
 const updateUser = `-- name: UpdateUser :exec
 UPDATE users
-SET
-    name = $1,
-    image_url = $2,
+SET name       = $1,
+    image_url  = $2,
     updated_at = NOW()
-WHERE
-    id = $3
+WHERE id = $3
 `
 
 type UpdateUserParams struct {

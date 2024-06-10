@@ -15,4 +15,5 @@ type Categories interface {
 	GetAll() ([]db.Category, error)
 	Insert(category Category) error
 	Update(category Category) error
+	Search(keyword string) ([]db.Category, error)
 }
