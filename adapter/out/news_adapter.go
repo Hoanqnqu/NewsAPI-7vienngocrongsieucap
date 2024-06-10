@@ -3,12 +3,14 @@ package outAdapter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
 	"github.com/google/uuid"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -49,6 +51,7 @@ func (u *NewsAdapter) GetAll() ([]outport.NewsWithCategory, error) {
 
 func (u *NewsAdapter) Insert(news outport.News) error {
 	query := db.New(u.pool)
+	fmt.Println(news)
 	err := query.InsertNews(context.Background(), db.InsertNewsParams{
 		ID: pgtype.UUID{
 			Bytes: news.ID,
@@ -83,7 +86,10 @@ func (u *NewsAdapter) Insert(news outport.News) error {
 			Valid: true,
 		},
 	})
-	if err != nil {
+	fmt.Println("-------news", err)
+
+	if err == nil {
+		fmt.Println("-------catregory", news.Categories)
 		for _, v := range news.Categories {
 			err = query.InsertHasCategory(context.Background(), db.InsertHasCategoryParams{
 				NewsID: pgtype.UUID{
@@ -100,6 +106,7 @@ func (u *NewsAdapter) Insert(news outport.News) error {
 			}
 		}
 	}
+	fmt.Println("-------ERR:", err)
 	return err
 }
 
@@ -140,7 +147,8 @@ func (u *NewsAdapter) Update(news outport.News) error {
 			Valid: true,
 		},
 	})
-	if err != nil {
+	if err == nil {
+		fmt.Println("-------catregory", news.Categories)
 		for _, v := range news.Categories {
 			err = query.InsertHasCategory(context.Background(), db.InsertHasCategoryParams{
 				NewsID: pgtype.UUID{
@@ -152,11 +160,17 @@ func (u *NewsAdapter) Update(news outport.News) error {
 					Valid: true,
 				},
 			})
+			var pgError *pgconn.PgError
 			if err != nil {
-				return err
+				if errors.As(err, &pgError) && pgError.Code != "23505" {
+					return err
+				}
+
 			}
+			err = nil
 		}
 	}
+	fmt.Println("err")
 	return err
 }
 
@@ -195,7 +209,6 @@ func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.N
 		ID:          _news.ID,
 		Categories:  category_ids,
 	}
-	fmt.Println(newsID, userID)
 	// Check whether the user has liked the news item
 	_, _err := query.GetLike(context.Background(), db.GetLikeParams{
 		NewsID: pgtype.UUID{
@@ -225,6 +238,5 @@ func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.N
 	if _err == nil {
 		isDisliked = true
 	}
-	fmt.Println(isLiked, isDisliked)
 	return
 }

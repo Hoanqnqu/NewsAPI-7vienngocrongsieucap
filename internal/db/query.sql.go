@@ -331,8 +331,6 @@ GROUP BY
     n.created_at,
     n.updated_at,
     n.deleted_at
-LIMIT 1	
-
 `
 
 type GetNewsRow struct {
@@ -473,29 +471,7 @@ func (q *Queries) InsertLike(ctx context.Context, arg InsertLikeParams) error {
 }
 
 const insertNews = `-- name: InsertNews :exec
-INSERT INTO
-    news (
-        id,
-        author,
-        title,
-        description,
-        content,
-        url,
-        image_url,
-        publish_at,
-        created_at
-    )
-VALUES (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        $6,
-        $7,
-        $8,
-        NOW()
-    )
+INSERT INTO news (id,author,title,description,content,url,image_url,publish_at,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
 `
 
 type InsertNewsParams struct {

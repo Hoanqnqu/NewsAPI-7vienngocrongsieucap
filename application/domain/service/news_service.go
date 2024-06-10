@@ -43,6 +43,7 @@ func (g *NewsService) Insert(news *inport.CreateNewsPayload) error {
 		PublishAt:   news.PublishAt,
 		Categories:  news.Categories,
 	})
+	
 	if err == nil {
 		return g.recommendationSystem.InsertNews(context.Background(), id, news.Categories)
 	}

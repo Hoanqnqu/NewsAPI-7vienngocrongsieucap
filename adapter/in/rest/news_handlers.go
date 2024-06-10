@@ -86,6 +86,7 @@ func (u *NewsHandlers) Update(response http.ResponseWriter, request *http.Reques
 		return
 	}
 	err = u.newsUseCase.Update(&news)
+	fmt.Println(err)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(response).Encode(APIResponse[any]{

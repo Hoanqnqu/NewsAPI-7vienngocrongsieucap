@@ -52,29 +52,7 @@ UPDATE categories SET deleted_at = NOW() WHERE id = $1;
 SELECT * from categories;
 
 -- name: InsertNews :exec
-INSERT INTO
-    news (
-        id,
-        author,
-        title,
-        description,
-        content,
-        url,
-        image_url,
-        publish_at,
-        created_at
-    )
-VALUES (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        $6,
-        $7,
-        $8,
-        NOW()
-    );
+INSERT INTO news (id,author,title,description,content,url,image_url,publish_at,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW());
 
 -- name: UpdateNews :exec
 UPDATE news
