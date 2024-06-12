@@ -395,25 +395,114 @@ func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (GetNewsRow, erro
 	return i, err
 }
 
-const getSaves = `-- name: GetSaves :many
-SELECT news_id
-from saves
-Where user_id = $1
+const getNewsByIds = `-- name: GetNewsByIds :many
+SELECT id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at from news
+WHERE id = ANY($1::uuid[])
 `
 
-func (q *Queries) GetSaves(ctx context.Context, userID pgtype.UUID) ([]pgtype.UUID, error) {
+func (q *Queries) GetNewsByIds(ctx context.Context, dollar_1 []pgtype.UUID) ([]News, error) {
+	rows, err := q.db.Query(ctx, getNewsByIds, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []News
+	for rows.Next() {
+		var i News
+		if err := rows.Scan(
+			&i.ID,
+			&i.Author,
+			&i.Title,
+			&i.Description,
+			&i.Content,
+			&i.Url,
+			&i.ImageUrl,
+			&i.PublishAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSaves = `-- name: GetSaves :many
+SELECT n.id                           AS id,
+       n.author,
+       n.title,
+       n.description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                   AS created_at,
+       n.updated_at                   AS updated_at,
+       n.deleted_at                   AS deleted_at,
+       json_agg(hc.category_id::uuid) AS category_ids
+FROM news n
+         Left JOIN has_categories hc ON n.id = hc.news_id
+         join saves s on s.news_id = n.id
+where s.user_id = $1
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at
+`
+
+type GetSavesRow struct {
+	ID          pgtype.UUID
+	Author      pgtype.Text
+	Title       pgtype.Text
+	Description pgtype.Text
+	Content     pgtype.Text
+	Url         pgtype.Text
+	ImageUrl    pgtype.Text
+	PublishAt   pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	DeletedAt   pgtype.Timestamp
+	CategoryIds []byte
+}
+
+func (q *Queries) GetSaves(ctx context.Context, userID pgtype.UUID) ([]GetSavesRow, error) {
 	rows, err := q.db.Query(ctx, getSaves, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []pgtype.UUID
+	var items []GetSavesRow
 	for rows.Next() {
-		var news_id pgtype.UUID
-		if err := rows.Scan(&news_id); err != nil {
+		var i GetSavesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Author,
+			&i.Title,
+			&i.Description,
+			&i.Content,
+			&i.Url,
+			&i.ImageUrl,
+			&i.PublishAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.CategoryIds,
+		); err != nil {
 			return nil, err
 		}
-		items = append(items, news_id)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -583,7 +672,9 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 }
 
 const searchCategories = `-- name: SearchCategories :many
-Select id, name, created_at, updated_at, deleted_at from Categories where name LIKE '%' || $1 || '%'
+Select id, name, created_at, updated_at, deleted_at
+from Categories
+where name LIKE '%' || $1 || '%'
 `
 
 func (q *Queries) SearchCategories(ctx context.Context, dollar_1 pgtype.Text) ([]Category, error) {
@@ -692,7 +783,10 @@ func (q *Queries) SearchNews(ctx context.Context, dollar_1 pgtype.Text) ([]Searc
 }
 
 const searchUsers = `-- name: SearchUsers :many
-Select id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at from users where email LIKE '%' || $1 || '%' or name LIKE '%' || $1 || '%'
+Select id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at
+from users
+where email LIKE '%' || $1 || '%'
+   or name LIKE '%' || $1 || '%'
 `
 
 func (q *Queries) SearchUsers(ctx context.Context, dollar_1 pgtype.Text) ([]User, error) {

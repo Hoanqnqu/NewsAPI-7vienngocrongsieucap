@@ -31,6 +31,6 @@ type UsersPort interface {
 	Like(like Like) error
 	DisLike(like Like) error
 	Save(like Like) error
-	GetSavedNews(userID string) ([]uuid.UUID, error)
+	GetSavedNews(userID string) ([]NewsWithCategory, error)
 	Search(keyword string) ([]db.User, error)
 }

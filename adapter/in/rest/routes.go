@@ -31,6 +31,9 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 	router.Post("/login", userHandlers.Login)
 	router.Get("/news/{newsId}", newsHandlers.GetNewsByID)
 	router.Post("/adminlogin", userHandlers.AdminLogin)
+	router.Get("/latest", newsHandlers.GetLatest)
+	router.Get("/popular/{categoryID}", newsHandlers.GetPopular)
+	router.Get("/recommend", newsHandlers.GetRecommend)
 	router.Group(func(adminRouter chi.Router) {
 		adminRouter.Use(AdminMiddleware)
 

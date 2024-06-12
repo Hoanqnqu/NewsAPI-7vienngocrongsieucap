@@ -53,6 +53,6 @@ type UsersUseCase interface {
 	Like(like *Like) error
 	DisLike(like *Like) error
 	Save(like *Like) error
-	GetSavedNews(userID string) ([]uuid.UUID, error)
+	GetSavedNews(userID string) ([]*News, error)
 	Search(keyword string) ([]*User, error)
 }

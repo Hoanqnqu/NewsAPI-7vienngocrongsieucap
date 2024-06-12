@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	inport "news-api/application/port/in"
 	outport "news-api/application/port/out"
 
@@ -9,10 +10,11 @@ import (
 
 type UsersService struct {
 	usersPort outport.UsersPort
+	recSys    outport.RecommendationSystem
 }
 
-func NewUsersService(userPort outport.UsersPort) *UsersService {
-	return &UsersService{usersPort: userPort}
+func NewUsersService(userPort outport.UsersPort, recSys outport.RecommendationSystem) *UsersService {
+	return &UsersService{usersPort: userPort, recSys: recSys}
 }
 
 func (g *UsersService) GetAll() ([]*inport.User, error) {
@@ -83,10 +85,15 @@ func (g *UsersService) GetAdmin(email string, password string) (user *inport.Upd
 }
 
 func (g *UsersService) Like(like *inport.Like) error {
-	return g.usersPort.Like(outport.Like{
+	err := g.usersPort.Like(outport.Like{
 		UserID: like.UserId,
 		NewsID: like.NewsId,
 	})
+	if err != nil {
+		return err
+	}
+	return g.recSys.SendLike(context.Background(), like.UserId, like.NewsId)
+
 }
 
 func (g *UsersService) DisLike(like *inport.Like) error {
@@ -103,8 +110,18 @@ func (g *UsersService) Save(like *inport.Like) error {
 	})
 }
 
-func (g *UsersService) GetSavedNews(userID string) ([]uuid.UUID, error) {
-	return g.usersPort.GetSavedNews(userID)
+func (g *UsersService) GetSavedNews(userID string) ([]*inport.News, error) {
+	news, err := g.usersPort.GetSavedNews(userID)
+	if err != nil {
+		return nil, err
+	}
+	return func() ([]*inport.News, error) {
+		result := make([]*inport.News, len(news))
+		for i, v := range news {
+			result[i] = MapNews(v)
+		}
+		return result, nil
+	}()
 }
 
 func (g *UsersService) Search(keyword string) ([]*inport.User, error) {

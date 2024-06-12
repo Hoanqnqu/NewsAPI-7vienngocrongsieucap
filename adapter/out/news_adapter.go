@@ -3,7 +3,6 @@ package outAdapter
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
@@ -78,7 +77,6 @@ func (u *NewsAdapter) SearchNews(keyword string) ([]outport.NewsWithCategory, er
 
 func (u *NewsAdapter) Insert(news outport.News) error {
 	query := db.New(u.pool)
-	fmt.Println(news)
 	err := query.InsertNews(context.Background(), db.InsertNewsParams{
 		ID: pgtype.UUID{
 			Bytes: news.ID,
@@ -113,10 +111,8 @@ func (u *NewsAdapter) Insert(news outport.News) error {
 			Valid: true,
 		},
 	})
-	fmt.Println("-------news", err)
 
 	if err == nil {
-		fmt.Println("-------catregory", news.Categories)
 		for _, v := range news.Categories {
 			err = query.InsertHasCategory(context.Background(), db.InsertHasCategoryParams{
 				NewsID: pgtype.UUID{
@@ -133,7 +129,6 @@ func (u *NewsAdapter) Insert(news outport.News) error {
 			}
 		}
 	}
-	fmt.Println("-------ERR:", err)
 	return err
 }
 
@@ -175,7 +170,6 @@ func (u *NewsAdapter) Update(news outport.News) error {
 		},
 	})
 	if err == nil {
-		fmt.Println("-------catregory", news.Categories)
 		err = query.DeleteHasCategory(context.Background(), pgtype.UUID{
 			Bytes: news.ID,
 			Valid: true,
@@ -264,4 +258,31 @@ func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.N
 		isDisliked = true
 	}
 	return
+}
+
+func (u *NewsAdapter) GetNewsByIDs(ids []string) ([]outport.NewsWithCategory, error) {
+	query := db.New(u.pool)
+	pgIDs := make([]pgtype.UUID, len(ids))
+	for i, id := range ids {
+		pgIDs[i] = pgtype.UUID{
+			Bytes: uuid.MustParse(id),
+			Valid: true,
+		}
+	}
+	news, err := query.GetNewsByIds(context.Background(), pgIDs)
+	sl := make([]outport.NewsWithCategory, len(news))
+	if err != nil {
+		return nil, err
+	}
+	for i, v := range news {
+		sl[i].Author = v.Author
+		sl[i].Content = v.Content
+		sl[i].Description = v.Description
+		sl[i].Title = v.Title
+		sl[i].Url = v.Url
+		sl[i].ImageUrl = v.ImageUrl
+		sl[i].PublishAt = v.PublishAt
+		sl[i].ID = v.ID
+	}
+	return sl, nil
 }

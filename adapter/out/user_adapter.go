@@ -2,9 +2,9 @@ package outAdapter
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/jackc/pgx/v5/pgconn"
-	"news-api/application/domain/service"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
@@ -46,7 +46,7 @@ func (u *UserAdapter) Insert(user outport.User) error {
 			Valid:  true,
 		},
 		Role: pgtype.Text{
-			String: user.Role,
+			String: "user",
 			Valid:  true,
 		},
 		ImageUrl: pgtype.Text{
@@ -214,7 +214,7 @@ func (u *UserAdapter) Save(like outport.Like) error {
 	return err
 }
 
-func (u *UserAdapter) GetSavedNews(userID string) ([]uuid.UUID, error) {
+func (u *UserAdapter) GetSavedNews(userID string) ([]outport.NewsWithCategory, error) {
 	query := db.New(u.pool)
 	response, err := query.GetSaves(context.Background(), pgtype.UUID{
 		Bytes: uuid.MustParse(userID),
@@ -223,11 +223,27 @@ func (u *UserAdapter) GetSavedNews(userID string) ([]uuid.UUID, error) {
 	if err != nil {
 		return nil, err
 	}
-	rs := make([]uuid.UUID, len(response))
-	for i, v := range response {
-		rs[i] = service.ToUUID(v)
+	sl := make([]outport.NewsWithCategory, len(response))
+	if err != nil {
+		return nil, err
 	}
-	return rs, nil
+	var categoryIds []pgtype.UUID
+	for i, v := range response {
+		sl[i].Author = v.Author
+		sl[i].Content = v.Content
+		sl[i].Description = v.Description
+		sl[i].Title = v.Title
+		sl[i].Url = v.Url
+		sl[i].ImageUrl = v.ImageUrl
+		sl[i].PublishAt = v.PublishAt
+		sl[i].ID = v.ID
+		err = json.Unmarshal(v.CategoryIds, &categoryIds)
+		if err != nil {
+			return nil, err
+		}
+		sl[i].Categories = categoryIds
+	}
+	return sl, nil
 
 }
 

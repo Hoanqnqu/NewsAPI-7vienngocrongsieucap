@@ -30,9 +30,9 @@ func (u *UserHandlers) GetSavedNews(response http.ResponseWriter, request *http.
 			StatusCode: 500,
 			Message:    "Unknown err",
 		})
-
+		return
 	}
-	json.NewEncoder(response).Encode(APIResponse[[]uuid.UUID]{
+	json.NewEncoder(response).Encode(APIResponse[[]*inport.News]{
 		StatusCode: 200,
 		Message:    "Ok",
 		Data:       newsList,
@@ -51,7 +51,7 @@ func (u *UserHandlers) GetAll(response http.ResponseWriter, request *http.Reques
 				StatusCode: 500,
 				Message:    "Unknown err",
 			})
-
+			return
 		}
 	} else {
 		usersList, err = u.userUseCase.GetAll()

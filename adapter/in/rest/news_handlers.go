@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"news-api/adapter/in/auth"
 	inport "news-api/application/port/in"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -144,5 +145,130 @@ func (u *NewsHandlers) GetNewsByID(response http.ResponseWriter, request *http.R
 		StatusCode: 200,
 		Message:    "Ok",
 		Data:       news,
+	})
+}
+func (u *NewsHandlers) GetLatest(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	var err error
+	count := 10
+	offset := 0
+	countQueryParams := request.URL.Query()["count"]
+	if len(countQueryParams) == 1 {
+		_count, err := strconv.Atoi(countQueryParams[0])
+		if err == nil {
+			count = _count
+		}
+	}
+	offsetQueryParam := request.URL.Query()["offset"]
+	if len(offsetQueryParam) == 1 {
+		_offset, err := strconv.Atoi(offsetQueryParam[0])
+		if err == nil {
+			offset = _offset
+		}
+	}
+	newsList, err := u.newsUseCase.GetLatestNews(count, offset)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
+		return
+	}
+	json.NewEncoder(response).Encode(APIResponse[[]*inport.News]{
+		StatusCode: 200,
+		Message:    "Ok",
+		Data:       newsList,
+	})
+}
+func (u *NewsHandlers) GetPopular(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	var err error
+	count := 10
+	offset := 0
+	categoryID := chi.URLParam(request, "categoryID")
+	countQueryParams := request.URL.Query()["count"]
+	if len(countQueryParams) == 1 {
+		_count, err := strconv.Atoi(countQueryParams[0])
+		if err == nil {
+			count = _count
+		}
+	}
+	offsetQueryParam := request.URL.Query()["offset"]
+	if len(offsetQueryParam) == 1 {
+		_offset, err := strconv.Atoi(offsetQueryParam[0])
+		if err == nil {
+			offset = _offset
+		}
+	}
+	newsList, err := u.newsUseCase.GetPopular(categoryID, count, offset)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
+		return
+	}
+	json.NewEncoder(response).Encode(APIResponse[[]*inport.News]{
+		StatusCode: 200,
+		Message:    "Ok",
+		Data:       newsList,
+	})
+}
+func (u *NewsHandlers) GetRecommend(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	var newsList []*inport.News
+	var err error
+	count := 10
+	offset := 0
+	tokenString := request.Header.Get("Authorization")
+	tokenString = tokenString[len("Bearer "):]
+	var userID string
+	if tokenString != "" {
+		claim, err := auth.ExtractUser(tokenString)
+		if err == nil {
+			userID = claim["ID"].(string)
+		}
+	}
+	countQueryParams := request.URL.Query()["count"]
+	if len(countQueryParams) == 1 {
+		_count, err := strconv.Atoi(countQueryParams[0])
+		if err == nil {
+			count = _count
+		}
+	}
+	offsetQueryParam := request.URL.Query()["offset"]
+	if len(offsetQueryParam) == 1 {
+		_offset, err := strconv.Atoi(offsetQueryParam[0])
+		if err == nil {
+			offset = _offset
+		}
+	}
+	if userID != "" {
+		newsList, err = u.newsUseCase.GetRecommend(userID, count, offset)
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
+			return
+		}
+	} else {
+		newsList, err = u.newsUseCase.GetLatestNews(count, offset)
+		if err != nil {
+			response.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(response).Encode(APIResponse[any]{
+				StatusCode: 500,
+				Message:    "Unknown err",
+			})
+			return
+		}
+	}
+	json.NewEncoder(response).Encode(APIResponse[[]*inport.News]{
+		StatusCode: 200,
+		Message:    "Ok",
+		Data:       newsList,
 	})
 }

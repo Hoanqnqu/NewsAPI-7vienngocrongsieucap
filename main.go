@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
+	"github.com/zhenghaoz/gorse/client"
 	"log"
 	"net/http"
 	"news-api/adapter/in/rest"
 	outAdapter "news-api/adapter/out"
 	"news-api/application/domain/service"
 	"os"
-	"github.com/joho/godotenv"
-	"github.com/zhenghaoz/gorse/client"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -18,7 +18,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-	  log.Fatal("Error loading .env file")
+		log.Fatal("Error loading .env file")
 	}
 	ctx := context.Background()
 	connectionString := fmt.Sprintf(
@@ -49,14 +49,14 @@ func main() {
 	userAdapter := outAdapter.NewUserAdapter(pool)
 	categoryAdapter := outAdapter.NewCategoryAdapter(pool)
 	newsAdapter := outAdapter.NewNewsAdapter(pool)
-	gorseAdaper := outAdapter.NewGorseAdapter(gorse)
+	gorseAdapter := outAdapter.NewGorseAdapter(gorse)
 	//init Use case
 	s3UseCase := service.NewUploadService(s3Adapter)
 	dummyUseCase := service.NewDummyService(dummyAdapter)
-	userUseCase := service.NewUsersService(userAdapter)
+	userUseCase := service.NewUsersService(userAdapter, gorseAdapter)
 	categoryUseCase := service.NewCategoriesService(categoryAdapter)
-	newsUseCase := service.NewNewsService(newsAdapter, gorseAdaper)
-	recommendUseCase := service.NewRecommendService(gorseAdaper)
+	newsUseCase := service.NewNewsService(newsAdapter, gorseAdapter)
+	recommendUseCase := service.NewRecommendService(gorseAdapter)
 	//init handler
 	dummyHandler := rest.NewDummyHandler(dummyUseCase)
 	userHandler := rest.NewUserHandlers(userUseCase, recommendUseCase)

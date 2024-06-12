@@ -92,3 +92,57 @@ func (g *NewsService) SearchNews(keyword string) ([]*inport.News, error) {
 		return result, nil
 	}()
 }
+
+func (g *NewsService) GetLatestNews(count int, offset int) ([]*inport.News, error) {
+	ids, err := g.recommendationSystem.GetLatestNews(context.Background(), count, offset)
+	if err != nil {
+		return nil, err
+	}
+	news, err := g.newsPort.GetNewsByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	return func() ([]*inport.News, error) {
+		result := make([]*inport.News, len(news))
+		for i, v := range news {
+			result[i] = MapNews(v)
+		}
+		return result, nil
+	}()
+}
+
+func (g *NewsService) GetPopular(categoryID string, count int, offset int) ([]*inport.News, error) {
+	ids, err := g.recommendationSystem.GetPopularByCategory(context.Background(), categoryID, count, offset)
+	if err != nil {
+		return nil, err
+	}
+	news, err := g.newsPort.GetNewsByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	return func() ([]*inport.News, error) {
+		result := make([]*inport.News, len(news))
+		for i, v := range news {
+			result[i] = MapNews(v)
+		}
+		return result, nil
+	}()
+}
+
+func (g *NewsService) GetRecommend(userID string, count int, offset int) ([]*inport.News, error) {
+	ids, err := g.recommendationSystem.GetRecommendForUser(context.Background(), userID, count, offset)
+	if err != nil {
+		return nil, err
+	}
+	news, err := g.newsPort.GetNewsByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	return func() ([]*inport.News, error) {
+		result := make([]*inport.News, len(news))
+		for i, v := range news {
+			result[i] = MapNews(v)
+		}
+		return result, nil
+	}()
+}

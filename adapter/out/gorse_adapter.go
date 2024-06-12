@@ -2,6 +2,7 @@ package outAdapter
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/zhenghaoz/gorse/client"
 	"time"
@@ -16,14 +17,20 @@ func NewGorseAdapter(gorse *client.GorseClient) *GorseAdapter {
 }
 
 func (g *GorseAdapter) InsertUser(ctx context.Context, id uuid.UUID) error {
-	_, err := g.gorse.InsertUser(ctx, client.User{
+	rowAffected, err := g.gorse.InsertUser(ctx, client.User{
 		UserId: id.String(),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	if rowAffected.RowAffected != 1 {
+		return fmt.Errorf("can not insert user")
+	}
+	return nil
 }
 
 func (g *GorseAdapter) InsertNews(ctx context.Context, id uuid.UUID, categories []uuid.UUID) error {
-	_, err := g.gorse.InsertItem(ctx, client.Item{
+	rowAffected, err := g.gorse.InsertItem(ctx, client.Item{
 		ItemId:   id.String(),
 		IsHidden: false,
 		Categories: func() []string {
@@ -35,5 +42,67 @@ func (g *GorseAdapter) InsertNews(ctx context.Context, id uuid.UUID, categories 
 		}(),
 		Timestamp: time.Now().String(),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	if rowAffected.RowAffected != 1 {
+		return fmt.Errorf("can not insert news")
+	}
+	return nil
+}
+
+func (g *GorseAdapter) SendLike(ctx context.Context, userID string, newsID string) error {
+	rowAffected, err := g.gorse.InsertFeedback(ctx, []client.Feedback{
+		{
+			FeedbackType: "like",
+			UserId:       userID,
+			ItemId:       newsID,
+			Timestamp:    time.Now().String(),
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if rowAffected.RowAffected != 1 {
+		return fmt.Errorf("can not send like feedback")
+	}
+	return nil
+}
+
+func (g *GorseAdapter) SendSave(ctx context.Context, userID string, newsID string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (g *GorseAdapter) SendDislike(ctx context.Context, userID string, newsID string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (g *GorseAdapter) GetLatestNews(ctx context.Context, count int, offset int) ([]string, error) {
+	scores, err := g.gorse.GetItemLatest(ctx, "", count, offset)
+	if err != nil {
+		return nil, err
+	}
+	rs := make([]string, len(scores))
+	for i, score := range scores {
+		rs[i] = score.Id
+	}
+	return rs, nil
+}
+
+func (g *GorseAdapter) GetPopularByCategory(ctx context.Context, categoryID string, count int, offset int) ([]string, error) {
+	scores, err := g.gorse.GetItemPopularWithCategory(ctx, "", categoryID, count, offset)
+	if err != nil {
+		return nil, err
+	}
+	rs := make([]string, len(scores))
+	for i, score := range scores {
+		rs[i] = score.Id
+	}
+	return rs, nil
+}
+
+func (g *GorseAdapter) GetRecommendForUser(ctx context.Context, userID string, count int, offset int) ([]string, error) {
+	return g.gorse.GetItemRecommendWithCategory(context.Background(), userID, "", "read", "300s", count, offset)
 }

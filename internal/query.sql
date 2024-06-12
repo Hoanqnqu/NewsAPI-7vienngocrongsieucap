@@ -133,9 +133,33 @@ Where news_id = $1
   and user_id = $2;
 
 -- name: GetSaves :many
-SELECT news_id
-from saves
-Where user_id = $1;
+SELECT n.id                           AS id,
+       n.author,
+       n.title,
+       n.description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                   AS created_at,
+       n.updated_at                   AS updated_at,
+       n.deleted_at                   AS deleted_at,
+       json_agg(hc.category_id::uuid) AS category_ids
+FROM news n
+         Left JOIN has_categories hc ON n.id = hc.news_id
+         join saves s on s.news_id = n.id
+where s.user_id = $1
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at;
 
 -- name: GetLike :one
 SELECT *
@@ -213,7 +237,16 @@ GROUP BY n.id,
          n.deleted_at;
 
 -- name: SearchUsers :many
-Select * from users where email LIKE '%' || $1 || '%' or name LIKE '%' || $1 || '%';
+Select *
+from users
+where email LIKE '%' || $1 || '%'
+   or name LIKE '%' || $1 || '%';
 
 -- name: SearchCategories :many
-Select * from Categories where name LIKE '%' || $1 || '%';
+Select *
+from Categories
+where name LIKE '%' || $1 || '%';
+
+-- name: GetNewsByIds :many
+SELECT * from news
+WHERE id = ANY($1::uuid[]);

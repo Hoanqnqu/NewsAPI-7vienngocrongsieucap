@@ -51,4 +51,7 @@ type NewsUseCase interface {
 	Update(news *UpdateNewsPayload) error
 	GetNewsByID(newsID, userID string) (*News, error)
 	SearchNews(keyword string) ([]*News, error)
+	GetLatestNews(count int, offset int) ([]*News, error)
+	GetPopular(categoryID string, count int, offset int) ([]*News, error)
+	GetRecommend(userID string, count int, offset int) ([]*News, error)
 }
