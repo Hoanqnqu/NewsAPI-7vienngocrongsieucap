@@ -14,4 +14,6 @@ type RecommendationSystem interface {
 	GetLatestNews(ctx context.Context, count int, offset int) ([]string, error)
 	GetPopularByCategory(ctx context.Context, categoryID string, count int, offset int) ([]string, error)
 	GetRecommendForUser(ctx context.Context, userID string, count int, offset int) ([]string, error)
+	DeleteUser(ctx context.Context, userID string) error
+	DeleteNews(ctx context.Context, newsID string) error
 }

@@ -28,4 +28,5 @@ type CategoriesUseCase interface {
 	Insert(category *CreateCategoryPayload) error
 	Update(category *UpdateCategoryPayload) error
 	Search(keyword string) ([]*Category, error)
+	Delete(id string) error
 }

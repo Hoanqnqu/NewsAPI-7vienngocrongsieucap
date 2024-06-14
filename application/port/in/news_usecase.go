@@ -54,4 +54,5 @@ type NewsUseCase interface {
 	GetLatestNews(count int, offset int) ([]*News, error)
 	GetPopular(categoryID string, count int, offset int) ([]*News, error)
 	GetRecommend(userID string, count int, offset int) ([]*News, error)
+	Delete(id string) error
 }

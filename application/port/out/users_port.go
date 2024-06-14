@@ -33,4 +33,5 @@ type UsersPort interface {
 	Save(like Like) error
 	GetSavedNews(userID string) ([]NewsWithCategory, error)
 	Search(keyword string) ([]db.User, error)
+	Delete(id string) error
 }

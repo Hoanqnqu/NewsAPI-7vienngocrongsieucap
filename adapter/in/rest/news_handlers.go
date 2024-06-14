@@ -26,6 +26,7 @@ func (u *NewsHandlers) GetAll(response http.ResponseWriter, request *http.Reques
 	var err error
 	keywords := request.URL.Query()["keyword"]
 	if len(keywords) == 1 {
+		fmt.Println("search keyword:", keywords[0])
 		newsList, err = u.newsUseCase.SearchNews(keywords[0])
 		if err != nil {
 			response.WriteHeader(http.StatusInternalServerError)
@@ -36,6 +37,7 @@ func (u *NewsHandlers) GetAll(response http.ResponseWriter, request *http.Reques
 			return
 		}
 	} else {
+		fmt.Println("Get All")
 		newsList, err = u.newsUseCase.GetAll()
 		if err != nil {
 			response.WriteHeader(http.StatusInternalServerError)
@@ -120,14 +122,16 @@ func (u *NewsHandlers) Update(response http.ResponseWriter, request *http.Reques
 func (u *NewsHandlers) GetNewsByID(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
 	newsId := chi.URLParam(request, "newsId")
-	tokenString := request.Header.Get("Authorization")
-	tokenString = tokenString[len("Bearer "):]
 	userId := uuid.Nil.String()
+	tokenString := request.Header.Get("Authorization")
 	if tokenString != "" {
-		claim, err := auth.ExtractUser(tokenString)
-		fmt.Println(err)
-		if err == nil {
-			userId = claim["ID"].(string)
+		tokenString = tokenString[len("Bearer "):]
+		if tokenString != "" {
+			claim, err := auth.ExtractUser(tokenString)
+			fmt.Println(err)
+			if err == nil {
+				userId = claim["ID"].(string)
+			}
 		}
 	}
 
@@ -186,7 +190,11 @@ func (u *NewsHandlers) GetPopular(response http.ResponseWriter, request *http.Re
 	var err error
 	count := 10
 	offset := 0
-	categoryID := chi.URLParam(request, "categoryID")
+	var categoryID string
+	categoryQueryParams := request.URL.Query()["category"]
+	if len(categoryQueryParams) == 1 {
+		categoryID = categoryQueryParams[0]
+	}
 	countQueryParams := request.URL.Query()["count"]
 	if len(countQueryParams) == 1 {
 		_count, err := strconv.Atoi(countQueryParams[0])
@@ -256,7 +264,7 @@ func (u *NewsHandlers) GetRecommend(response http.ResponseWriter, request *http.
 			return
 		}
 	} else {
-		newsList, err = u.newsUseCase.GetLatestNews(count, offset)
+		newsList, err = u.newsUseCase.GetPopular("", count, offset)
 		if err != nil {
 			response.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(response).Encode(APIResponse[any]{
@@ -271,4 +279,23 @@ func (u *NewsHandlers) GetRecommend(response http.ResponseWriter, request *http.
 		Message:    "Ok",
 		Data:       newsList,
 	})
+}
+
+func (u *NewsHandlers) Delete(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	newsID := chi.URLParam(request, "id")
+	err := u.newsUseCase.Delete(newsID)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
+		return
+	}
+	json.NewEncoder(response).Encode(APIResponse[any]{
+		StatusCode: 201,
+		Message:    "Ok",
+	})
+
 }

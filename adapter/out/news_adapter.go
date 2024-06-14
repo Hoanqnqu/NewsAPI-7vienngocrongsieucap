@@ -3,6 +3,7 @@ package outAdapter
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
@@ -27,8 +28,8 @@ func (u *NewsAdapter) GetAll() ([]outport.NewsWithCategory, error) {
 	if err != nil {
 		return nil, err
 	}
-	var categoryIds []pgtype.UUID
 	for i, v := range news {
+		var categoryIds []pgtype.UUID
 		sl[i].Author = v.Author
 		sl[i].Content = v.Content
 		sl[i].Description = v.Description
@@ -38,6 +39,7 @@ func (u *NewsAdapter) GetAll() ([]outport.NewsWithCategory, error) {
 		sl[i].PublishAt = v.PublishAt
 		sl[i].ID = v.ID
 		err = json.Unmarshal(v.CategoryIds, &categoryIds)
+		fmt.Println("CategoryIds:", categoryIds)
 		if err != nil {
 			return nil, err
 		}
@@ -56,8 +58,8 @@ func (u *NewsAdapter) SearchNews(keyword string) ([]outport.NewsWithCategory, er
 	if err != nil {
 		return nil, err
 	}
-	var categoryIds []pgtype.UUID
 	for i, v := range news {
+		var categoryIds []pgtype.UUID
 		sl[i].Author = v.Author
 		sl[i].Content = v.Content
 		sl[i].Description = v.Description
@@ -67,6 +69,7 @@ func (u *NewsAdapter) SearchNews(keyword string) ([]outport.NewsWithCategory, er
 		sl[i].PublishAt = v.PublishAt
 		sl[i].ID = v.ID
 		err = json.Unmarshal(v.CategoryIds, &categoryIds)
+		fmt.Println("CategoryIds:", categoryIds)
 		if err != nil {
 			return nil, err
 		}
@@ -212,6 +215,8 @@ func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.N
 	// Unmarshal the category IDs from the database into a slice of UUID objects
 	var category_ids []pgtype.UUID
 	err = json.Unmarshal(_news.CategoryIds, &category_ids)
+	fmt.Println("CategoryIds:", category_ids)
+
 	if err != nil {
 		return nil, false, false, err
 	}
@@ -285,4 +290,12 @@ func (u *NewsAdapter) GetNewsByIDs(ids []string) ([]outport.NewsWithCategory, er
 		sl[i].ID = v.ID
 	}
 	return sl, nil
+}
+
+func (u *NewsAdapter) Delete(id string) error {
+	query := db.New(u.pool)
+	return query.DeleteNews(context.Background(), pgtype.UUID{
+		Bytes: uuid.MustParse(id),
+		Valid: true,
+	})
 }

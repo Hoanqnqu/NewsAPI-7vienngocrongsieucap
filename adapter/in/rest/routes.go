@@ -32,8 +32,10 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 	router.Get("/news/{newsId}", newsHandlers.GetNewsByID)
 	router.Post("/adminlogin", userHandlers.AdminLogin)
 	router.Get("/latest", newsHandlers.GetLatest)
-	router.Get("/popular/{categoryID}", newsHandlers.GetPopular)
+	router.Get("/popular", newsHandlers.GetPopular)
 	router.Get("/recommend", newsHandlers.GetRecommend)
+	router.Get("/categories", categoryHandlers.GetAll)
+
 	router.Group(func(adminRouter chi.Router) {
 		adminRouter.Use(AdminMiddleware)
 
@@ -41,16 +43,19 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 		adminRouter.Get("/users", userHandlers.GetAll)
 		adminRouter.Post("/users", userHandlers.Insert)
 		adminRouter.Put("/users/{id}", userHandlers.Update)
+		adminRouter.Delete("/users/{id}", userHandlers.Delete)
 
 		// Category routes
-		adminRouter.Get("/categories", categoryHandlers.GetAll)
 		adminRouter.Post("/categories", categoryHandlers.Insert)
 		adminRouter.Put("/categories/{id}", categoryHandlers.Update)
+		adminRouter.Delete("/categories/{id}", categoryHandlers.Delete)
 
 		// News routes
 		// adminRouter.Get("/news", newsHandlers.GetAll)
 		adminRouter.Post("/news", newsHandlers.Insert)
 		adminRouter.Put("/news/{id}", newsHandlers.Update)
+		adminRouter.Delete("/news/{id}", newsHandlers.Delete)
+
 	})
 
 	router.Group(func(userRouter chi.Router) {

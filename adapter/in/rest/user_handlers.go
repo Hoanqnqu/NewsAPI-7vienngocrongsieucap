@@ -328,3 +328,22 @@ func (u *UserHandlers) Save(response http.ResponseWriter, request *http.Request)
 		Message:    "Ok",
 	})
 }
+
+func (u *UserHandlers) Delete(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	userID := chi.URLParam(request, "id")
+	err := u.userUseCase.Delete(userID)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(APIResponse[any]{
+			StatusCode: 500,
+			Message:    "Unknown err",
+		})
+		return
+	}
+	json.NewEncoder(response).Encode(APIResponse[any]{
+		StatusCode: 201,
+		Message:    "Ok",
+	})
+
+}

@@ -153,6 +153,7 @@ func (q *Queries) GetAdmin(ctx context.Context, arg GetAdminParams) ([]User, err
 const getAllCategories = `-- name: GetAllCategories :many
 SELECT id, name, created_at, updated_at, deleted_at
 from categories
+where deleted_at is null
 `
 
 func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
@@ -196,6 +197,7 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
+WHERE n.deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -260,6 +262,7 @@ func (q *Queries) GetAllNews(ctx context.Context) ([]GetAllNewsRow, error) {
 const getAllUsers = `-- name: GetAllUsers :many
 SELECT id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at
 from users
+where deleted_at is null
 `
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
@@ -346,7 +349,7 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
-where id = $1
+where id = $1 and deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -395,9 +398,34 @@ func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (GetNewsRow, erro
 	return i, err
 }
 
+const getNewsByCategory = `-- name: GetNewsByCategory :many
+Select news_id from has_categories where category_id = $1
+`
+
+func (q *Queries) GetNewsByCategory(ctx context.Context, categoryID pgtype.UUID) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, getNewsByCategory, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var news_id pgtype.UUID
+		if err := rows.Scan(&news_id); err != nil {
+			return nil, err
+		}
+		items = append(items, news_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getNewsByIds = `-- name: GetNewsByIds :many
-SELECT id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at from news
-WHERE id = ANY($1::uuid[])
+SELECT id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at
+from news
+WHERE id = ANY ($1::uuid[]) and deleted_at is null
 `
 
 func (q *Queries) GetNewsByIds(ctx context.Context, dollar_1 []pgtype.UUID) ([]News, error) {
@@ -448,7 +476,7 @@ SELECT n.id                           AS id,
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
          join saves s on s.news_id = n.id
-where s.user_id = $1
+where s.user_id = $1 and n.deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -674,7 +702,7 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 const searchCategories = `-- name: SearchCategories :many
 Select id, name, created_at, updated_at, deleted_at
 from Categories
-where name LIKE '%' || $1 || '%'
+where name LIKE '%' || $1 || '%' and deleted_at is null
 `
 
 func (q *Queries) SearchCategories(ctx context.Context, dollar_1 pgtype.Text) ([]Category, error) {
@@ -718,9 +746,12 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
-WHERE author LIKE '%' || $1 || '%'
-   OR description LIKE '%' || $1 || '%'
-   OR title LIKE '%' || $1 || '%'
+WHERE deleted_at is null and (
+    author LIKE '%' || $1 || '%'
+        OR description LIKE '%' || $1 || '%'
+        OR title LIKE '%' || $1 || '%'
+    )
+
 GROUP BY n.id,
          n.author,
          n.title,
@@ -786,7 +817,7 @@ const searchUsers = `-- name: SearchUsers :many
 Select id, auth_id, email, password, name, role, image_url, created_at, updated_at, deleted_at
 from users
 where email LIKE '%' || $1 || '%'
-   or name LIKE '%' || $1 || '%'
+   or name LIKE '%' || $1 || '%' and deleted_at is null
 `
 
 func (q *Queries) SearchUsers(ctx context.Context, dollar_1 pgtype.Text) ([]User, error) {

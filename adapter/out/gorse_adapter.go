@@ -92,7 +92,12 @@ func (g *GorseAdapter) GetLatestNews(ctx context.Context, count int, offset int)
 }
 
 func (g *GorseAdapter) GetPopularByCategory(ctx context.Context, categoryID string, count int, offset int) ([]string, error) {
-	scores, err := g.gorse.GetItemPopularWithCategory(ctx, "", categoryID, count, offset)
+	var scores []client.Score
+	var err error
+	if categoryID == "" {
+		scores, err = g.gorse.GetItemPopular(ctx, "", count, offset)
+	}
+	scores, err = g.gorse.GetItemPopularWithCategory(ctx, "", categoryID, count, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -105,4 +110,26 @@ func (g *GorseAdapter) GetPopularByCategory(ctx context.Context, categoryID stri
 
 func (g *GorseAdapter) GetRecommendForUser(ctx context.Context, userID string, count int, offset int) ([]string, error) {
 	return g.gorse.GetItemRecommendWithCategory(context.Background(), userID, "", "read", "300s", count, offset)
+}
+
+func (g *GorseAdapter) DeleteUser(ctx context.Context, userID string) error {
+	rowAffected, err := g.gorse.DeleteUser(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if rowAffected.RowAffected != 1 {
+		return fmt.Errorf("can not delete user")
+	}
+	return nil
+}
+
+func (g *GorseAdapter) DeleteNews(ctx context.Context, newsID string) error {
+	rowAffected, err := g.gorse.DeleteItem(ctx, newsID)
+	if err != nil {
+		return err
+	}
+	if rowAffected.RowAffected != 1 {
+		return fmt.Errorf("can not delete news")
+	}
+	return nil
 }

@@ -40,4 +40,5 @@ type NewsPort interface {
 	GetNewsByID(newsID, userID string) (*NewsWithCategory, bool, bool, error)
 	SearchNews(keyword string) ([]NewsWithCategory, error)
 	GetNewsByIDs(ids []string) ([]NewsWithCategory, error)
+	Delete(id string) error
 }

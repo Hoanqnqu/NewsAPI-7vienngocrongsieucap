@@ -255,3 +255,11 @@ func (u *UserAdapter) Search(keyword string) ([]db.User, error) {
 		Valid:  true,
 	})
 }
+
+func (u *UserAdapter) Delete(id string) error {
+	query := db.New(u.pool)
+	return query.DeleteUser(context.Background(), pgtype.UUID{
+		Bytes: uuid.MustParse(id),
+		Valid: true,
+	})
+}

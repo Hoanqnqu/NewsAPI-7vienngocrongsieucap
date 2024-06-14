@@ -111,3 +111,8 @@ func (u *CategoryHandlers) Update(response http.ResponseWriter, request *http.Re
 		Message:    "Ok",
 	})
 }
+
+func (u *CategoryHandlers) Delete(response http.ResponseWriter, request *http.Request) {
+	return
+
+}

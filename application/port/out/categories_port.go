@@ -16,4 +16,5 @@ type Categories interface {
 	Insert(category Category) error
 	Update(category Category) error
 	Search(keyword string) ([]db.Category, error)
+	Delete(id uuid.UUID) error
 }

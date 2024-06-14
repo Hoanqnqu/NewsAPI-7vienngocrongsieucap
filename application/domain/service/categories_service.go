@@ -57,3 +57,8 @@ func (g *CategoriesService) Update(category *inport.UpdateCategoryPayload) error
 		Name: category.Name,
 	})
 }
+
+func (g *CategoriesService) Delete(id string) error {
+	//TODO implement me
+	panic("implement me")
+}

@@ -52,6 +52,15 @@ func (g *UsersService) Update(user *inport.UpdateUserPayload) error {
 		ImageUrl: user.ImageUrl,
 	})
 }
+
+func (g *UsersService) Delete(userID string) error {
+	err := g.usersPort.Delete(userID)
+	if err != nil {
+		return err
+	}
+	return g.recSys.DeleteUser(context.Background(), userID)
+}
+
 func (g *UsersService) GetUserByAuthID(authID string) (user *inport.UpdateUserPayload, err error) {
 	u, err := g.usersPort.GetByAuthID(authID)
 	if err != nil {

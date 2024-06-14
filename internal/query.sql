@@ -17,7 +17,8 @@ WHERE users.email = $1
 
 -- name: GetAllUsers :many
 SELECT *
-from users;
+from users
+where deleted_at is null;
 
 -- name: GetUserByAuthID :one
 SELECT *
@@ -49,7 +50,8 @@ WHERE id = $1;
 
 -- name: GetAllCategories :many
 SELECT *
-from categories;
+from categories
+where deleted_at is null;
 
 -- name: InsertNews :exec
 INSERT INTO news (id, author, title, description, content, url, image_url, publish_at, created_at)
@@ -86,6 +88,7 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
+WHERE n.deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -148,7 +151,7 @@ SELECT n.id                           AS id,
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
          join saves s on s.news_id = n.id
-where s.user_id = $1
+where s.user_id = $1 and n.deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -188,7 +191,7 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
-where id = $1
+where id = $1 and deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -221,9 +224,12 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
-WHERE author LIKE '%' || $1 || '%'
-   OR description LIKE '%' || $1 || '%'
-   OR title LIKE '%' || $1 || '%'
+WHERE deleted_at is null and (
+    author LIKE '%' || $1 || '%'
+        OR description LIKE '%' || $1 || '%'
+        OR title LIKE '%' || $1 || '%'
+    )
+
 GROUP BY n.id,
          n.author,
          n.title,
@@ -240,13 +246,17 @@ GROUP BY n.id,
 Select *
 from users
 where email LIKE '%' || $1 || '%'
-   or name LIKE '%' || $1 || '%';
+   or name LIKE '%' || $1 || '%' and deleted_at is null;
 
 -- name: SearchCategories :many
 Select *
 from Categories
-where name LIKE '%' || $1 || '%';
+where name LIKE '%' || $1 || '%' and deleted_at is null;
 
 -- name: GetNewsByIds :many
-SELECT * from news
-WHERE id = ANY($1::uuid[]);
+SELECT *
+from news
+WHERE id = ANY ($1::uuid[]) and deleted_at is null;
+
+-- name: GetNewsByCategory :many
+Select news_id from has_categories where category_id = $1;

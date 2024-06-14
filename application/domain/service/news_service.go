@@ -146,3 +146,11 @@ func (g *NewsService) GetRecommend(userID string, count int, offset int) ([]*inp
 		return result, nil
 	}()
 }
+
+func (g *NewsService) Delete(id string) error {
+	err := g.newsPort.Delete(id)
+	if err != nil {
+		return err
+	}
+	return g.recommendationSystem.DeleteNews(context.Background(), id)
+}

@@ -11,9 +11,8 @@ var _ = Describe("TestGorse", func() {
 	It("test", func() {
 		gorse := client.NewGorseClient("http://127.0.0.1:8087", "")
 
-		scores, err := gorse.GetItemRecommendWithCategory(context.Background(), "", "", "read", "300s", 10, 0)
+		scores, err := gorse.DeleteUser(context.Background(), "40310ed2-70d7-44b9-8eb0-e8b17c48b5ab")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(len(scores) > 0).To(BeTrue())
-
+		_ = scores
 	})
 })

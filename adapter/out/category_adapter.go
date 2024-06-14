@@ -2,6 +2,7 @@ package outAdapter
 
 import (
 	"context"
+	"github.com/google/uuid"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
 
@@ -62,4 +63,8 @@ func (u *CategoryAdapter) Update(category outport.Category) error {
 		},
 	})
 	return err
+}
+
+func (u *CategoryAdapter) Delete(id uuid.UUID) error {
+	return nil
 }
