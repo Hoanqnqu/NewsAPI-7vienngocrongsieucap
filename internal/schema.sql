@@ -63,3 +63,12 @@ CREATE TABLE saves
     user_id uuid references users (id) NOT NULL,
     PRIMARY KEY (news_id, user_id)
 );
+
+CREATE TABLE comments
+(
+    news_id uuid references news (id)  NOT NULL,
+    user_id uuid references users (id) NOT NULL,
+    text text ,
+    published_at timestamp,
+    PRIMARY KEY (news_id, user_id)
+);

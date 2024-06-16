@@ -230,15 +230,24 @@ func (u *NewsHandlers) GetRecommend(response http.ResponseWriter, request *http.
 	var err error
 	count := 10
 	offset := 0
-	tokenString := request.Header.Get("Authorization")
-	tokenString = tokenString[len("Bearer "):]
 	var userID string
-	if tokenString != "" {
+	tokenString := request.Header.Get("Authorization")
+	if tokenString == "" {
 		claim, err := auth.ExtractUser(tokenString)
 		if err == nil {
 			userID = claim["ID"].(string)
 		}
+	} else {
+		tokenString = tokenString[len("Bearer "):]
+
+		if tokenString != "" {
+			claim, err := auth.ExtractUser(tokenString)
+			if err == nil {
+				userID = claim["ID"].(string)
+			}
+		}
 	}
+
 	countQueryParams := request.URL.Query()["count"]
 	if len(countQueryParams) == 1 {
 		_count, err := strconv.Atoi(countQueryParams[0])
