@@ -21,6 +21,8 @@ type News struct {
 	DeletedAt   *time.Time  `json:"deleted_at"`
 	IsLiked     bool        `json:"isLiked"`
 	IsDisliked  bool        `json:"isDisliked"`
+	View        int         `json:"view"`
+	RelatedNews []*News     `json:"related_news"`
 }
 type CreateNewsPayload struct {
 	Author      string      `json:"author"`

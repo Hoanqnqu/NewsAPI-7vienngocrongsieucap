@@ -56,4 +56,5 @@ type UsersUseCase interface {
 	GetSavedNews(userID string) ([]*News, error)
 	Search(keyword string) ([]*User, error)
 	Delete(userID string) error
+	View(userID string, newsID string)
 }

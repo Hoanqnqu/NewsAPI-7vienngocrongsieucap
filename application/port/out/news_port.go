@@ -31,6 +31,7 @@ type NewsWithCategory struct {
 	CreatedAt   pgtype.Timestamp
 	UpdatedAt   pgtype.Timestamp
 	DeletedAt   pgtype.Timestamp
+	View        int
 }
 
 type NewsPort interface {

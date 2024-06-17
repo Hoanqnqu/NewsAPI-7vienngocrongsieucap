@@ -42,6 +42,7 @@ func AppRouter(
 	router.Get("/recommend", newsHandlers.GetRecommend)
 	router.Get("/categories", categoryHandlers.GetAll)
 	router.Get("/comments/{newsID}", commentHandler.GetCommentsByNews)
+	router.Post("/view/{newsID}", userHandlers.View)
 
 	router.Group(func(adminRouter chi.Router) {
 		adminRouter.Use(AdminMiddleware)

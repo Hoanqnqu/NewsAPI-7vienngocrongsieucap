@@ -4,6 +4,7 @@ import (
 	"context"
 	inport "news-api/application/port/in"
 	outport "news-api/application/port/out"
+	"slices"
 
 	"github.com/google/uuid"
 )
@@ -58,6 +59,28 @@ func (g *NewsService) GetNewsByID(newsID, userID string) (*inport.News, error) {
 	convertedNews := MapNews(*news)
 	convertedNews.IsLiked = isLiked
 	convertedNews.IsDisliked = isDislike
+	ids := make([]string, 0, 3*len(convertedNews.Categories))
+	for _, category := range convertedNews.Categories {
+		_ids, err := g.recommendationSystem.GetPopularByCategory(context.Background(), category.String(), 3, 0)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range _ids {
+			if !slices.Contains(ids, id) && id != newsID {
+				ids = append(ids, id)
+			}
+		}
+
+	}
+	_relatedNews, err := g.newsPort.GetNewsByIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	relatedNews := make([]*inport.News, len(_relatedNews))
+	for i, relatedNew := range _relatedNews {
+		relatedNews[i] = MapNews(relatedNew)
+	}
+	convertedNews.RelatedNews = relatedNews
 	return convertedNews, nil
 }
 

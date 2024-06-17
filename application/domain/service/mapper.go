@@ -46,6 +46,7 @@ func MapNews(news outport.NewsWithCategory) *inport.News {
 		CreatedAt: PGTimestampToTime(news.CreatedAt),
 		UpdatedAt: PGTimestampToTime(news.UpdatedAt),
 		DeletedAt: PGTimestampToTime(news.DeletedAt),
+		View:      news.View,
 	}
 }
 

@@ -194,9 +194,12 @@ SELECT n.id                           AS id,
        n.created_at                   AS created_at,
        n.updated_at                   AS updated_at,
        n.deleted_at                   AS deleted_at,
-       json_agg(hc.category_id::uuid) AS category_ids
+       json_agg(hc.category_id::uuid) AS category_ids,
+       COALESCE(COUNT(Distinct v.user_id), 0)  AS view_count
 FROM news n
-         Left JOIN has_categories hc ON n.id = hc.news_id
+         Left JOIN has_categories hc
+                   ON n.id = hc.news_id
+         LEFT JOIN views v ON n.id = v.news_id
 WHERE n.deleted_at is null
 GROUP BY n.id,
          n.author,
@@ -224,6 +227,7 @@ type GetAllNewsRow struct {
 	UpdatedAt   pgtype.Timestamp
 	DeletedAt   pgtype.Timestamp
 	CategoryIds []byte
+	ViewCount   interface{}
 }
 
 func (q *Queries) GetAllNews(ctx context.Context) ([]GetAllNewsRow, error) {
@@ -248,6 +252,7 @@ func (q *Queries) GetAllNews(ctx context.Context) ([]GetAllNewsRow, error) {
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.CategoryIds,
+			&i.ViewCount,
 		); err != nil {
 			return nil, err
 		}
@@ -346,9 +351,12 @@ SELECT n.id                           AS id,
        n.created_at                   AS created_at,
        n.updated_at                   AS updated_at,
        n.deleted_at                   AS deleted_at,
-       json_agg(hc.category_id::uuid) AS category_ids
+       json_agg(hc.category_id::uuid) AS category_ids,
+       COALESCE(COUNT(Distinct v.user_id), 0)  AS view_count
 FROM news n
-         Left JOIN has_categories hc ON n.id = hc.news_id
+         Left JOIN has_categories hc
+                   ON n.id = hc.news_id
+         LEFT JOIN views v ON n.id = v.news_id
 where id = $1
   and deleted_at is null
 GROUP BY n.id,
@@ -377,6 +385,7 @@ type GetNewsRow struct {
 	UpdatedAt   pgtype.Timestamp
 	DeletedAt   pgtype.Timestamp
 	CategoryIds []byte
+	ViewCount   interface{}
 }
 
 func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (GetNewsRow, error) {
@@ -395,52 +404,65 @@ func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (GetNewsRow, erro
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.CategoryIds,
+		&i.ViewCount,
 	)
 	return i, err
 }
 
-const getNewsByCategory = `-- name: GetNewsByCategory :many
-Select news_id
-from has_categories
-where category_id = $1
+const getNewsByIds = `-- name: GetNewsByIds :many
+SELECT n.id                          AS id,
+       n.author,
+       n.title,
+       n.description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                  AS created_at,
+       n.updated_at                  AS updated_at,
+       n.deleted_at                  AS deleted_at,
+       COALESCE(COUNT(Distinct v.user_id), 0) AS view_count
+FROM news n
+         LEFT JOIN views v ON n.id = v.news_id
+WHERE n.id = ANY ($1::uuid[])
+  AND n.deleted_at IS NULL
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at
 `
 
-func (q *Queries) GetNewsByCategory(ctx context.Context, categoryID pgtype.UUID) ([]pgtype.UUID, error) {
-	rows, err := q.db.Query(ctx, getNewsByCategory, categoryID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []pgtype.UUID
-	for rows.Next() {
-		var news_id pgtype.UUID
-		if err := rows.Scan(&news_id); err != nil {
-			return nil, err
-		}
-		items = append(items, news_id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+type GetNewsByIdsRow struct {
+	ID          pgtype.UUID
+	Author      pgtype.Text
+	Title       pgtype.Text
+	Description pgtype.Text
+	Content     pgtype.Text
+	Url         pgtype.Text
+	ImageUrl    pgtype.Text
+	PublishAt   pgtype.Timestamp
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	DeletedAt   pgtype.Timestamp
+	ViewCount   interface{}
 }
 
-const getNewsByIds = `-- name: GetNewsByIds :many
-SELECT id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at
-from news
-WHERE id = ANY ($1::uuid[])
-  and deleted_at is null
-`
-
-func (q *Queries) GetNewsByIds(ctx context.Context, dollar_1 []pgtype.UUID) ([]News, error) {
+func (q *Queries) GetNewsByIds(ctx context.Context, dollar_1 []pgtype.UUID) ([]GetNewsByIdsRow, error) {
 	rows, err := q.db.Query(ctx, getNewsByIds, dollar_1)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []News
+	var items []GetNewsByIdsRow
 	for rows.Next() {
-		var i News
+		var i GetNewsByIdsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Author,
@@ -453,6 +475,7 @@ func (q *Queries) GetNewsByIds(ctx context.Context, dollar_1 []pgtype.UUID) ([]N
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.ViewCount,
 		); err != nil {
 			return nil, err
 		}
@@ -720,12 +743,28 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 	return err
 }
 
+const insertView = `-- name: InsertView :exec
+Insert into views (news_id, user_id)
+values ($1, $2)
+`
+
+type InsertViewParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) InsertView(ctx context.Context, arg InsertViewParams) error {
+	_, err := q.db.Exec(ctx, insertView, arg.NewsID, arg.UserID)
+	return err
+}
+
 const queryCommentByNews = `-- name: QueryCommentByNews :many
 select c.text, c.published_at, u.name, image_url
 from comments c
          JOIN users u
               on c.user_id = u.id
 where news_id = $1
+order BY c.published_at DESC
 `
 
 type QueryCommentByNewsRow struct {
@@ -805,9 +844,12 @@ SELECT n.id                           AS id,
        n.created_at                   AS created_at,
        n.updated_at                   AS updated_at,
        n.deleted_at                   AS deleted_at,
-       json_agg(hc.category_id::uuid) AS category_ids
+       json_agg(hc.category_id::uuid) AS category_ids,
+       COALESCE(COUNT(Distinct v.user_id), 0)  AS view_count
 FROM news n
-         Left JOIN has_categories hc ON n.id = hc.news_id
+         Left JOIN has_categories hc
+                   ON n.id = hc.news_id
+         LEFT JOIN views v ON n.id = v.news_id
 WHERE deleted_at is null
   and (
     author LIKE '%' || $1 || '%'
@@ -841,6 +883,7 @@ type SearchNewsRow struct {
 	UpdatedAt   pgtype.Timestamp
 	DeletedAt   pgtype.Timestamp
 	CategoryIds []byte
+	ViewCount   interface{}
 }
 
 func (q *Queries) SearchNews(ctx context.Context, dollar_1 pgtype.Text) ([]SearchNewsRow, error) {
@@ -865,6 +908,7 @@ func (q *Queries) SearchNews(ctx context.Context, dollar_1 pgtype.Text) ([]Searc
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.CategoryIds,
+			&i.ViewCount,
 		); err != nil {
 			return nil, err
 		}

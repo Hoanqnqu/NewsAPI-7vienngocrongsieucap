@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	outport "news-api/application/port/out"
 	db "news-api/internal/db"
-
-	"github.com/google/uuid"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -55,6 +54,20 @@ func (u *UserAdapter) Insert(user outport.User) error {
 		},
 	})
 	return err
+}
+
+func (u *UserAdapter) View(userID string, newsID string) {
+	query := db.New(u.pool)
+	query.InsertView(context.Background(), db.InsertViewParams{
+		NewsID: pgtype.UUID{
+			Bytes: uuid.MustParse(newsID),
+			Valid: true,
+		},
+		UserID: pgtype.UUID{
+			Bytes: uuid.MustParse(userID),
+			Valid: true,
+		},
+	})
 }
 
 func (u *UserAdapter) Update(user outport.User) error {
@@ -150,6 +163,17 @@ func (u *UserAdapter) Like(like outport.Like) error {
 				},
 			})
 		}
+	} else {
+		query.DeleteDisLike(context.Background(), db.DeleteDisLikeParams{
+			NewsID: pgtype.UUID{
+				Bytes: uuid.MustParse(like.NewsID),
+				Valid: true,
+			},
+			UserID: pgtype.UUID{
+				Bytes: uuid.MustParse(like.UserID),
+				Valid: true,
+			},
+		})
 	}
 	return err
 }
@@ -180,6 +204,17 @@ func (u *UserAdapter) DisLike(like outport.Like) error {
 				},
 			})
 		}
+	} else {
+		query.DeleteLike(context.Background(), db.DeleteLikeParams{
+			NewsID: pgtype.UUID{
+				Bytes: uuid.MustParse(like.NewsID),
+				Valid: true,
+			},
+			UserID: pgtype.UUID{
+				Bytes: uuid.MustParse(like.UserID),
+				Valid: true,
+			},
+		})
 	}
 	return err
 }

@@ -34,4 +34,5 @@ type UsersPort interface {
 	GetSavedNews(userID string) ([]NewsWithCategory, error)
 	Search(keyword string) ([]db.User, error)
 	Delete(id string) error
+	View(userID string, newsID string)
 }

@@ -146,3 +146,7 @@ func (g *UsersService) Search(keyword string) ([]*inport.User, error) {
 		return result
 	}(), nil
 }
+
+func (g *UsersService) View(userID string, newsID string) {
+	g.usersPort.View(userID, newsID)
+}

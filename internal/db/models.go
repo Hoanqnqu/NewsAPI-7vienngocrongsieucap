@@ -69,3 +69,8 @@ type User struct {
 	UpdatedAt pgtype.Timestamp
 	DeletedAt pgtype.Timestamp
 }
+
+type View struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+}

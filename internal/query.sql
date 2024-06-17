@@ -85,9 +85,12 @@ SELECT n.id                           AS id,
        n.created_at                   AS created_at,
        n.updated_at                   AS updated_at,
        n.deleted_at                   AS deleted_at,
-       json_agg(hc.category_id::uuid) AS category_ids
+       json_agg(hc.category_id::uuid) AS category_ids,
+       COALESCE(COUNT(Distinct v.user_id), 0)  AS view_count
 FROM news n
-         Left JOIN has_categories hc ON n.id = hc.news_id
+         Left JOIN has_categories hc
+                   ON n.id = hc.news_id
+         LEFT JOIN views v ON n.id = v.news_id
 WHERE n.deleted_at is null
 GROUP BY n.id,
          n.author,
@@ -189,9 +192,12 @@ SELECT n.id                           AS id,
        n.created_at                   AS created_at,
        n.updated_at                   AS updated_at,
        n.deleted_at                   AS deleted_at,
-       json_agg(hc.category_id::uuid) AS category_ids
+       json_agg(hc.category_id::uuid) AS category_ids,
+       COALESCE(COUNT(Distinct v.user_id), 0)  AS view_count
 FROM news n
-         Left JOIN has_categories hc ON n.id = hc.news_id
+         Left JOIN has_categories hc
+                   ON n.id = hc.news_id
+         LEFT JOIN views v ON n.id = v.news_id
 where id = $1
   and deleted_at is null
 GROUP BY n.id,
@@ -223,9 +229,12 @@ SELECT n.id                           AS id,
        n.created_at                   AS created_at,
        n.updated_at                   AS updated_at,
        n.deleted_at                   AS deleted_at,
-       json_agg(hc.category_id::uuid) AS category_ids
+       json_agg(hc.category_id::uuid) AS category_ids,
+       COALESCE(COUNT(Distinct v.user_id), 0)  AS view_count
 FROM news n
-         Left JOIN has_categories hc ON n.id = hc.news_id
+         Left JOIN has_categories hc
+                   ON n.id = hc.news_id
+         LEFT JOIN views v ON n.id = v.news_id
 WHERE deleted_at is null
   and (
     author LIKE '%' || $1 || '%'
@@ -258,15 +267,34 @@ where name LIKE '%' || $1 || '%'
   and deleted_at is null;
 
 -- name: GetNewsByIds :many
-SELECT *
-from news
-WHERE id = ANY ($1::uuid[])
-  and deleted_at is null;
+SELECT n.id                          AS id,
+       n.author,
+       n.title,
+       n.description,
+       n.content,
+       n.url,
+       n.image_url,
+       n.publish_at,
+       n.created_at                  AS created_at,
+       n.updated_at                  AS updated_at,
+       n.deleted_at                  AS deleted_at,
+       COALESCE(COUNT(Distinct v.user_id), 0) AS view_count
+FROM news n
+         LEFT JOIN views v ON n.id = v.news_id
+WHERE n.id = ANY ($1::uuid[])
+  AND n.deleted_at IS NULL
+GROUP BY n.id,
+         n.author,
+         n.title,
+         n.description,
+         n.content,
+         n.url,
+         n.image_url,
+         n.publish_at,
+         n.created_at,
+         n.updated_at,
+         n.deleted_at;
 
--- name: GetNewsByCategory :many
-Select news_id
-from has_categories
-where category_id = $1;
 
 -- name: InsertComment :exec
 Insert INTO comments (news_id, user_id, text, published_at)
@@ -277,4 +305,10 @@ select c.text, c.published_at, u.name, image_url
 from comments c
          JOIN users u
               on c.user_id = u.id
-where news_id = $1;
+where news_id = $1
+order BY c.published_at DESC;
+
+-- name: InsertView :exec
+Insert into views (news_id, user_id)
+values ($1, $2);
+

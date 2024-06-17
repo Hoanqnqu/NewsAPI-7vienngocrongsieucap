@@ -44,6 +44,7 @@ func (u *NewsAdapter) GetAll() ([]outport.NewsWithCategory, error) {
 			return nil, err
 		}
 		sl[i].Categories = categoryIds
+		sl[i].View = convertViewType(v.ViewCount)
 	}
 	return sl, nil
 }
@@ -74,6 +75,7 @@ func (u *NewsAdapter) SearchNews(keyword string) ([]outport.NewsWithCategory, er
 			return nil, err
 		}
 		sl[i].Categories = categoryIds
+		sl[i].View = convertViewType(v.ViewCount)
 	}
 	return sl, nil
 }
@@ -232,6 +234,7 @@ func (u *NewsAdapter) GetNewsByID(newsID string, userID string) (news *outport.N
 		PublishAt:   _news.PublishAt,
 		ID:          _news.ID,
 		Categories:  category_ids,
+		View:        convertViewType(_news.ViewCount),
 	}
 	// Check whether the user has liked the news item
 	_, _err := query.GetLike(context.Background(), db.GetLikeParams{
@@ -288,6 +291,7 @@ func (u *NewsAdapter) GetNewsByIDs(ids []string) ([]outport.NewsWithCategory, er
 		sl[i].ImageUrl = v.ImageUrl
 		sl[i].PublishAt = v.PublishAt
 		sl[i].ID = v.ID
+		sl[i].View = convertViewType(v.ViewCount)
 	}
 	return sl, nil
 }
@@ -298,4 +302,23 @@ func (u *NewsAdapter) Delete(id string) error {
 		Bytes: uuid.MustParse(id),
 		Valid: true,
 	})
+}
+
+func convertViewType(v interface{}) int {
+	switch v := v.(type) {
+	case int64:
+		return int(v)
+	case int32:
+		return int(v)
+	case int:
+		return v
+	case uint64:
+		return int(v)
+	case uint32:
+		return int(v)
+	case uint:
+		return int(v)
+	default:
+		return 0
+	}
 }

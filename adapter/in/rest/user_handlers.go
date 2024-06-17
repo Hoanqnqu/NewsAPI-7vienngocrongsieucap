@@ -3,7 +3,6 @@ package rest
 import (
 	"context"
 	"encoding/json"
-
 	"net/http"
 	"news-api/adapter/in/auth"
 	inport "news-api/application/port/in"
@@ -346,4 +345,28 @@ func (u *UserHandlers) Delete(response http.ResponseWriter, request *http.Reques
 		Message:    "Ok",
 	})
 
+}
+
+func (u *UserHandlers) View(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	newsID := chi.URLParam(request, "newsID")
+	tokenString := request.Header.Get("Authorization")
+	var userID string
+	if tokenString != "" {
+		tokenString = tokenString[len("Bearer "):]
+		if tokenString != "" {
+			claim, err := auth.ExtractUser(tokenString)
+			if err == nil {
+				userID = claim["ID"].(string)
+			}
+		}
+	}
+	if userID == "" {
+		return
+	}
+	u.userUseCase.View(userID, newsID)
+	json.NewEncoder(response).Encode(APIResponse[any]{
+		StatusCode: 201,
+		Message:    "Ok",
+	})
 }
