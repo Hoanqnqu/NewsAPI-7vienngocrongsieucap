@@ -16,6 +16,13 @@ type Category struct {
 	DeletedAt pgtype.Timestamp
 }
 
+type Comment struct {
+	NewsID      pgtype.UUID
+	UserID      pgtype.UUID
+	Text        pgtype.Text
+	PublishedAt pgtype.Timestamp
+}
+
 type Dislike struct {
 	NewsID pgtype.UUID
 	UserID pgtype.UUID

@@ -7,7 +7,13 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryHandlers *CategoryHandlers, newsHandlers *NewsHandlers, s3Handler *UploadHandlers) *chi.Mux {
+func AppRouter(
+	dummyHandler *DummyHandler,
+	userHandlers *UserHandlers,
+	categoryHandlers *CategoryHandlers,
+	newsHandlers *NewsHandlers,
+	s3Handler *UploadHandlers,
+	commentHandler *CommentHandler) *chi.Mux {
 	router := chi.NewRouter()
 	// for more ideas, see: https://developer.github.com/v3/#cross-origin-resource-sharing
 	router.Use(cors.Handler(cors.Options{
@@ -35,6 +41,7 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 	router.Get("/popular", newsHandlers.GetPopular)
 	router.Get("/recommend", newsHandlers.GetRecommend)
 	router.Get("/categories", categoryHandlers.GetAll)
+	router.Get("/comments/{newsID}", commentHandler.GetCommentsByNews)
 
 	router.Group(func(adminRouter chi.Router) {
 		adminRouter.Use(AdminMiddleware)
@@ -65,6 +72,7 @@ func AppRouter(dummyHandler *DummyHandler, userHandlers *UserHandlers, categoryH
 		userRouter.Post("/dislike/{newsId}", userHandlers.Dislike)
 		userRouter.Post("/save/{newsId}", userHandlers.Save)
 		userRouter.Get("/saved", userHandlers.GetSavedNews)
+		userRouter.Post("/comment", commentHandler.Insert)
 	})
 
 	return router

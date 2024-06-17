@@ -151,7 +151,8 @@ SELECT n.id                           AS id,
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
          join saves s on s.news_id = n.id
-where s.user_id = $1 and n.deleted_at is null
+where s.user_id = $1
+  and n.deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -191,7 +192,8 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
-where id = $1 and deleted_at is null
+where id = $1
+  and deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -224,7 +226,8 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
-WHERE deleted_at is null and (
+WHERE deleted_at is null
+  and (
     author LIKE '%' || $1 || '%'
         OR description LIKE '%' || $1 || '%'
         OR title LIKE '%' || $1 || '%'
@@ -251,12 +254,27 @@ where email LIKE '%' || $1 || '%'
 -- name: SearchCategories :many
 Select *
 from Categories
-where name LIKE '%' || $1 || '%' and deleted_at is null;
+where name LIKE '%' || $1 || '%'
+  and deleted_at is null;
 
 -- name: GetNewsByIds :many
 SELECT *
 from news
-WHERE id = ANY ($1::uuid[]) and deleted_at is null;
+WHERE id = ANY ($1::uuid[])
+  and deleted_at is null;
 
 -- name: GetNewsByCategory :many
-Select news_id from has_categories where category_id = $1;
+Select news_id
+from has_categories
+where category_id = $1;
+
+-- name: InsertComment :exec
+Insert INTO comments (news_id, user_id, text, published_at)
+values ($1, $2, $3, NOW());
+
+-- name: QueryCommentByNews :many
+select c.text, c.published_at, u.name, image_url
+from comments c
+         JOIN users u
+              on c.user_id = u.id
+where news_id = $1;

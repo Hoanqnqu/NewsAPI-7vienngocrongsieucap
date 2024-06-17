@@ -50,6 +50,7 @@ func main() {
 	categoryAdapter := outAdapter.NewCategoryAdapter(pool)
 	newsAdapter := outAdapter.NewNewsAdapter(pool)
 	gorseAdapter := outAdapter.NewGorseAdapter(gorse)
+	commentAdapter := outAdapter.NewCommentAdapter(pool)
 	//init Use case
 	s3UseCase := service.NewUploadService(s3Adapter)
 	dummyUseCase := service.NewDummyService(dummyAdapter)
@@ -57,13 +58,15 @@ func main() {
 	categoryUseCase := service.NewCategoriesService(categoryAdapter)
 	newsUseCase := service.NewNewsService(newsAdapter, gorseAdapter)
 	recommendUseCase := service.NewRecommendService(gorseAdapter)
+	commentUseCase := service.NewCommentService(commentAdapter)
 	//init handler
 	dummyHandler := rest.NewDummyHandler(dummyUseCase)
 	userHandler := rest.NewUserHandlers(userUseCase, recommendUseCase)
 	categoryHandler := rest.NewCategoryHandlers(categoryUseCase)
 	newsHandler := rest.NewNewsHandlers(newsUseCase)
 	s3Handler := rest.NewUploadHandlers(s3UseCase)
+	commentHandler := rest.NewCommentHandler(commentUseCase)
 
-	router := rest.AppRouter(dummyHandler, userHandler, categoryHandler, newsHandler, s3Handler)
+	router := rest.AppRouter(dummyHandler, userHandler, categoryHandler, newsHandler, s3Handler, commentHandler)
 	http.ListenAndServe(":3000", router)
 }

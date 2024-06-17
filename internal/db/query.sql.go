@@ -349,7 +349,8 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
-where id = $1 and deleted_at is null
+where id = $1
+  and deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -399,7 +400,9 @@ func (q *Queries) GetNews(ctx context.Context, id pgtype.UUID) (GetNewsRow, erro
 }
 
 const getNewsByCategory = `-- name: GetNewsByCategory :many
-Select news_id from has_categories where category_id = $1
+Select news_id
+from has_categories
+where category_id = $1
 `
 
 func (q *Queries) GetNewsByCategory(ctx context.Context, categoryID pgtype.UUID) ([]pgtype.UUID, error) {
@@ -425,7 +428,8 @@ func (q *Queries) GetNewsByCategory(ctx context.Context, categoryID pgtype.UUID)
 const getNewsByIds = `-- name: GetNewsByIds :many
 SELECT id, author, title, description, content, url, image_url, publish_at, created_at, updated_at, deleted_at
 from news
-WHERE id = ANY ($1::uuid[]) and deleted_at is null
+WHERE id = ANY ($1::uuid[])
+  and deleted_at is null
 `
 
 func (q *Queries) GetNewsByIds(ctx context.Context, dollar_1 []pgtype.UUID) ([]News, error) {
@@ -476,7 +480,8 @@ SELECT n.id                           AS id,
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
          join saves s on s.news_id = n.id
-where s.user_id = $1 and n.deleted_at is null
+where s.user_id = $1
+  and n.deleted_at is null
 GROUP BY n.id,
          n.author,
          n.title,
@@ -574,6 +579,22 @@ type InsertCategoryParams struct {
 
 func (q *Queries) InsertCategory(ctx context.Context, arg InsertCategoryParams) error {
 	_, err := q.db.Exec(ctx, insertCategory, arg.ID, arg.Name)
+	return err
+}
+
+const insertComment = `-- name: InsertComment :exec
+Insert INTO comments (news_id, user_id, text, published_at)
+values ($1, $2, $3, NOW())
+`
+
+type InsertCommentParams struct {
+	NewsID pgtype.UUID
+	UserID pgtype.UUID
+	Text   pgtype.Text
+}
+
+func (q *Queries) InsertComment(ctx context.Context, arg InsertCommentParams) error {
+	_, err := q.db.Exec(ctx, insertComment, arg.NewsID, arg.UserID, arg.Text)
 	return err
 }
 
@@ -699,10 +720,51 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) error {
 	return err
 }
 
+const queryCommentByNews = `-- name: QueryCommentByNews :many
+select c.text, c.published_at, u.name, image_url
+from comments c
+         JOIN users u
+              on c.user_id = u.id
+where news_id = $1
+`
+
+type QueryCommentByNewsRow struct {
+	Text        pgtype.Text
+	PublishedAt pgtype.Timestamp
+	Name        pgtype.Text
+	ImageUrl    pgtype.Text
+}
+
+func (q *Queries) QueryCommentByNews(ctx context.Context, newsID pgtype.UUID) ([]QueryCommentByNewsRow, error) {
+	rows, err := q.db.Query(ctx, queryCommentByNews, newsID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []QueryCommentByNewsRow
+	for rows.Next() {
+		var i QueryCommentByNewsRow
+		if err := rows.Scan(
+			&i.Text,
+			&i.PublishedAt,
+			&i.Name,
+			&i.ImageUrl,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchCategories = `-- name: SearchCategories :many
 Select id, name, created_at, updated_at, deleted_at
 from Categories
-where name LIKE '%' || $1 || '%' and deleted_at is null
+where name LIKE '%' || $1 || '%'
+  and deleted_at is null
 `
 
 func (q *Queries) SearchCategories(ctx context.Context, dollar_1 pgtype.Text) ([]Category, error) {
@@ -746,7 +808,8 @@ SELECT n.id                           AS id,
        json_agg(hc.category_id::uuid) AS category_ids
 FROM news n
          Left JOIN has_categories hc ON n.id = hc.news_id
-WHERE deleted_at is null and (
+WHERE deleted_at is null
+  and (
     author LIKE '%' || $1 || '%'
         OR description LIKE '%' || $1 || '%'
         OR title LIKE '%' || $1 || '%'
